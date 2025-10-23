@@ -7,8 +7,8 @@ FUNCTION_BLOCK FB200
 VAR_INPUT
   Einrichtbetrieb   : BOOL; // Einrichtbetrieb aktiv
   Automatikbetrieb  : BOOL; // Automatikbetrieb aktiv
-  Takt_1Hz         : BOOL; // 1Hz Taktsignal für Blinken
-  Position_C       : INT; // Positionszaehler aus FB500
+  Takt_1Hz         : BOOL; // 1Hz Taktsignal fuer Blinken
+  Position       : INT; // Positionszaehler aus FB1
 END_VAR
 
 BEGIN
@@ -54,16 +54,16 @@ BEGIN
   "-PF5" := NOT "-FC7";
   
   // PF6: Linksfahrt blinkend
-  // AKTION: Meldeleuchte blinkt während X-Achse nach links faehrt
+  // AKTION: Meldeleuchte blinkt weahrend X-Achse nach links faehrt
   "-PF6" := (sig_QA5 AND Takt_1Hz);
   
   // PF7: Rechtsfahrt blinkend
-  // AKTION: Meldeleuchte blinkt während X-Achse nach rechts faehrt
+  // AKTION: Meldeleuchte blinkt weahrend X-Achse nach rechts faehrt
   "-PF7" := (sig_QA6 AND Takt_1Hz);
   
   // PF8: Position erreicht
   // AKTION: Meldeleuchte AN wenn Position 1, 2, 3 oder 4 erreicht
-  "-PF8" := (Position_C = 1) OR (Position_C = 2) OR (Position_C = 3) OR (Position_C = 4);
+  "-PF8" := (Position = DB1.Pos1) OR (Position = DB1.Pos2) OR (Position = DB1.Pos3) OR (Position_C = DB1.Pos4);
   
   // PF10: Zylinder MM20 eingefahren
   // AKTION: Meldeleuchte spiegelt Zustand Sensor -BG21

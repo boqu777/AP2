@@ -122,6 +122,7 @@ BEGIN
       // die Soll-Position (C2) erreicht hat.
       IF (Position >= C2) THEN
         sig_QA5 := FALSE; 
+        
         Schritt := 504; 
       END_IF;
         
@@ -200,7 +201,7 @@ BEGIN
     508: 
       IF Schritt_POS_FL THEN TIMER_S508(IN := FALSE); END_IF;
       sig_MB31 := TRUE; 
-      
+      sig_QA61 := TRUE;
       TIMER_S508(IN := "-BG51", PT := T#1s);
       IF TIMER_S508.Q THEN
         Schritt := 509; 
