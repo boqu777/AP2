@@ -1,0 +1,83 @@
+Symbol;Operand;Datentyp;Kommentar
+-PF7;A 0.0;BOOL;O1 - Rechtsfahrt blinkend
+-PF8;A 0.1;BOOL;O2 - Position erreicht
+-PF10;A 0.2;BOOL;O3 - Zylinder MM20 eingefahren
+-PF11;A 0.3;BOOL;O4 - Zylinder MM20 ausgefahren
+-PF12;A 0.4;BOOL;O5 - Zylinder MM30 eingefahren
+-PF14;A 0.6;BOOL;O22 - Zylinder MM40 eingefahren
+-MB21;A 136.0;BOOL;O6 - Zylinder MM20 einfahren
+-MB22;A 136.1;BOOL;O7 - Zylinder MM20 ausfahren
+-MB31;A 136.2;BOOL;O8 - Zylinder MM30 einfahren
+-MB32;A 136.3;BOOL;O9 - Zylinder MM30 ausfahren
+-MB41;A 136.4;BOOL;O10 - Zylinder MM40 einfahren
+-MB42;A 136.5;BOOL;O11 - Zylinder MM40 ausfahren
+-QA5;A 136.6;BOOL;O12 - X-Achse Linksfahrt
+-QA6;A 136.7;BOOL;O13 - X-Achse Rechtsfahrt
+-PF32;A 137.0;BOOL;O14 - Magazin leer
+-PF33;A 137.1;BOOL;O15 - Magnet deaktiviert
+-QA61;A 137.2;BOOL;O21 - Schuetz fuer Magnet
+-PF2;A 137.3;BOOL;O17 - Grundstellung
+-PF3;A 137.4;BOOL;O18 - Betriebsart Einricht-/Automatikbetrieb
+-PF4;A 137.5;BOOL;O19 - Betriebsdruck vorhanden
+-PF5;A 137.6;BOOL;O20 - Motorschutz FC7 ausgeloest
+-PF6;A 137.7;BOOL;O0 - Linksfahrt blinkend
+-KE2;E 136.0;BOOL;I0 - Meldung NOT-AUS o.k.
+-SJ3;E 136.1;BOOL;I1 - Steuerung AUS/EIN
+-SJ4;E 136.2;BOOL;I2 - Betriebsart Einricht/Automatik
+-SJ5;E 136.3;BOOL;I3 - Start Automatik
+-SJ6;E 136.4;BOOL;I4 - MA10 Linksfahrt
+-SJ7;E 136.5;BOOL;I5 - MA10 Rechtsfahrt
+-SJ8;E 136.6;BOOL;I6 - Zylinder MM20 einfahren
+-SJ9;E 136.7;BOOL;I7 - Zylinder MM20 ausfahren
+-SJ10;E 137.0;BOOL;I8 - Zylinder MM30 ein-/ausfahren (Wippe)
+-SJ11;E 137.1;BOOL;I9 - Zylinder MM40 ein-/ausfahren (Magnet)
+-SJ12;E 137.2;BOOL;I10 - Magnet deaktivieren
+-BP1;E 137.3;BOOL;I11 - Betriebsdruck vorhanden
+-BG11;E 137.4;BOOL;I12 - X-Achse Endlage links
+-BG12;E 137.5;BOOL;I13 - X-Achse Positioniererfassung
+-BG13;E 137.6;BOOL;I14 - X-Achse Endlage rechts (Grundposition)
+-BG21;E 137.7;BOOL;I15 - Zylinder MM20 eingefahren
+-BG22;E 138.0;BOOL;I16 - Zylinder MM20 ausgefahren
+-BG31;E 138.1;BOOL;I17 - Zylinder MM30 eingefahren
+-BG32;E 138.2;BOOL;I18 - Zylinder MM30 ausgefahren
+-BG41;E 138.3;BOOL;I19 - Zylinder MM40 eingefahren
+-BG42;E 138.4;BOOL;I20 - Zylinder MM40 ausgefahren
+-BG52;E 138.5;BOOL;I21 - LWL Teile- bzw. Bohrungserkennung
+-BG51;E 138.6;BOOL;I22 - Materialerkennung induktiv
+-FC7;E 138.7;BOOL;I23 - Motorschutz in Ordnung
+sig_MB21;M 0.0;BOOL;Befehl: MM20 einfahren
+sig_MB22;M 0.1;BOOL;Befehl: MM20 ausfahren
+sig_MB31;M 0.2;BOOL;Befehl: MM30 einfahren
+sig_MB32;M 0.3;BOOL;Befehl: MM30 ausfahren
+sig_MB41;M 0.4;BOOL;Befehl: MM40 einfahren
+sig_MB42;M 0.5;BOOL;Befehl: MM40 ausfahren
+sig_QA5;M 0.6;BOOL;Befehl: X-Achse Linksfahrt
+sig_QA6;M 0.7;BOOL;Befehl: X-Achse Rechtsfahrt
+sig_QA61;M 1.0;BOOL;Befehl: Schuetz Magnet
+Einrichtbetrieb;M 1.1;BOOL;Global: Betriebsart Einrichten aktiv (von FB0)
+Automatikbetrieb;M 1.2;BOOL;Global: Betriebsart Automatik aktiv (von FB0)
+Teil_Kunststoff;M 1.3;BOOL;Global: Merker "Teil ist Kunststoff"
+Teil_Metall;M 1.4;BOOL;Global: Merker "Teil ist Metall o. Bohrung"
+g_bTakt_1Hz;M 10.0;BOOL;Globaler Takt 1Hz (von FB100 fuer FB200)
+Position;MW 8;INT;IST-Position X-Achse (von FB1)
+C2;MW 10;INT;SOLL-Position X-Achse (fuer FB500)
+Zyklus;OB 1;OB;OB 1
+Positionen;DB 1;DB;Datenbaustein fuer Positionen
+Positionen.Pos1;DB1.DBW 0;INT;Ablagepostion Kunststoffteile
+Positionen.Pos2;DB1.DBW 2;INT;Ablageposition Metallteile mit Bohrung
+Positionen.Pos3;DB1.DBW 4;INT;Ablageposition Metallteile ohne Bohrung
+Positionen.Pos4;DB1.DBW 6;INT;Reserve Postion
+FB0 Betriebsartenwahl;FB 0;FB;FB Betriebsartenwahl
+Instanz_FB0;DB 10;DB;Instanz-DB fuer FB0 Betriebsartenwahl
+Positionserfassung;FB 1;FB;FB Positionserfassung
+Positionserfassung_DB;DB 11;DB;Instanz-DB fuer FB1 Positionserfassung
+Taktgeber;FB 100;FB;FB Taktgeber
+Instanz_FB100;DB 100;DB;Instanz-DB fuer FB100 Taktgeber
+Anzeige;FB 200;FB;FB Anzeige
+Anzeige_DB;DB 200;DB;Instanz-DB fuer FB200 Anzeige
+FB300 Einrichtbetrieb;FB 300;FB;FB Einrichtbetrieb
+Instanz_FB300;DB 300;DB;Instanz-DB fuer FB300 Einrichtbetrieb
+FB500 Automatikbetrieb;FB 500;FB;FB Automatikbetrieb
+Instanz_FB500;DB 500;DB;Instanz-DB fuer FB500 Automatikbetrieb
+FB600 Aktionen;FB 600;FB;FB Aktionen
+DB600;DB 600;DB;Instanz-DB fuer FB600 Aktionen
