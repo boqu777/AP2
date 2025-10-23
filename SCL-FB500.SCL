@@ -12,13 +12,13 @@ VAR // Statische Variablen (behalten ihren Wert)
   Schritt_POS_FL  : BOOL;       // Ist TRUE fuer genau 1 Zyklus bei Schrittwechsel
   
   // Timer-Instanzen
-  TIMER_S504      : TON; // 1s Verzoegerung bei "-"
-  TIMER_S505      : TON; // 5s Verzoegerung bei "-BG51"
-  TIMER_S507      : TON; // 2s Verzoegerung bei BG32
-  TIMER_S507a     : TON; // 2s Verzoegerung bei BG42 (fuer Schritt 517)
+  TIMER_S504      : TON; // 1s Verzoegerung bei "-BG21"
+  TIMER_S505      : TON; // 5s Verzoegerung bei "-BG22"
+  TIMER_S507      : TON; // 2s Verzoegerung bei "-BG32"
+  TIMER_S507a     : TON; // 2s Verzoegerung bei "-BG42" (fuer Schritt 517)
   TIMER_S507b     : TON; // 2s Verzoegerung bei "-BG41" (fuer Schritt 527)
-  TIMER_S507c     : TON; // 2s Verzoegerung bei BG32 (fuer Schritt 537)
-  TIMER_S508      : TON; // 1s Verzoegerung bei "-BG51"
+  TIMER_S507c     : TON; // 2s Verzoegerung bei "-BG32" (fuer Schritt 537)
+  TIMER_S508      : TON; // 1s Verzoegerung bei "-BG31"
 END_VAR
 
 
@@ -125,7 +125,7 @@ BEGIN
         Schritt := 504; 
       END_IF;
         
-    // --- Schritt 504: Zylinder MM20 ausfahren ---
+    // --- Schritt 504: Zylinder MM20 ausfahren --- Bauteil aus dem Magazin schieben
     504: 
       IF Schritt_POS_FL THEN TIMER_S504(IN := FALSE); END_IF;
       sig_MB22 := TRUE; 
