@@ -12,13 +12,13 @@ VAR // Statische Variablen (behalten ihren Wert)
   Schritt_POS_FL  : BOOL;       // Ist TRUE fuer genau 1 Zyklus bei Schrittwechsel
   
   // Timer-Instanzen
-  TIMER_S504      : TON; // 1s Verzoegerung bei BG22
-  TIMER_S505      : TON; // 5s Verzoegerung bei BG21
+  TIMER_S504      : TON; // 1s Verzoegerung bei "-"
+  TIMER_S505      : TON; // 5s Verzoegerung bei "-BG51"
   TIMER_S507      : TON; // 2s Verzoegerung bei BG32
   TIMER_S507a     : TON; // 2s Verzoegerung bei BG42 (fuer Schritt 517)
-  TIMER_S507b     : TON; // 2s Verzoegerung bei BG41 (fuer Schritt 527)
+  TIMER_S507b     : TON; // 2s Verzoegerung bei "-BG41" (fuer Schritt 527)
   TIMER_S507c     : TON; // 2s Verzoegerung bei BG32 (fuer Schritt 537)
-  TIMER_S508      : TON; // 1s Verzoegerung bei BG31
+  TIMER_S508      : TON; // 1s Verzoegerung bei "-BG51"
 END_VAR
 
 
@@ -70,60 +70,58 @@ BEGIN
         Teil_Metall     := FALSE; 
       END_IF;
       
-      // Transition: Warten auf Startbefehl
-      IF (SJ5 AND BG13 AND BG21 AND BG31 
-          AND BG41 AND (BG51 OR NOT BG52)) THEN
+      // Transition: Warten auf Grundstellung, Teile im Magazin und Startbefehl -SJ5
+      IF ("-SJ5" AND "-BG13" AND "-BG21" AND "-BG31" 
+          AND "-BG41" AND ("-BG51" OR NOT "-BG52")) THEN
         Schritt := 501; 
       END_IF;
 
     // --- Schritt 501: Teileerkennung ---
     501: 
       // Transition: Alternative Verzweigung (Teile pruefen)
-      IF (BG51 AND BG52) THEN         // "Metall mit Bohrung"
+      IF ("-BG51" AND "-BG52") THEN         // "Metall mit Bohrung"
         Schritt := 502; 
-      ELSIF (NOT BG51 AND NOT BG52) THEN // "Kunststoff"
+      ELSIF (NOT "-BG51" AND NOT "-BG52") THEN // "Kunststoff"
         Schritt := 512; 
-      ELSIF (BG51 AND NOT BG52) THEN // "Metall ohne Bohrung"
+      ELSIF ("-BG51" AND NOT "-BG52") THEN // "Metall ohne Bohrung"
         Schritt := 522; 
       END_IF;
         
     // --- Schritt 502: Teil = "Metall mit Bohrung" ---
     502: 
-      // L-Aktion: Lade Soll-Position C2 (aus globalem Merker)
+      // L-Aktion: Lade Soll-Position C2 (aus DB1)
       IF Schritt_POS_FL THEN
         C2 := DB1.Pos2;
       END_IF;
       Schritt := 503; 
 
-    // --- Schritt 512: Teil = "Kunststoff" (ehemals 502a) ---
+    // --- Schritt 512: Teil = "Kunststoff" (502a) ---
     512: 
-      // L-Aktion: Lade Soll-Position C2 (aus globalem Merker)
+      // L-Aktion: Lade Soll-Position C2 (aus DB1)
       IF Schritt_POS_FL THEN
         C2 := DB1.Pos1;
         Teil_Kunststoff := TRUE;
       END_IF;
       Schritt := 503; 
 
-    // --- Schritt 522: Teil = "Metall ohne Bohrung" (ehemals 502b) ---
+    // --- Schritt 522: Teil = "Metall ohne Bohrung" (502b) ---
     522: 
-      // L-Aktion: Lade Soll-Position C2 (aus globalem Merker)
+      // L-Aktion: Lade Soll-Position C2 (aus DB1)
       IF Schritt_POS_FL THEN
-        // HINWEIS: Laut deiner Tabelle nutzt "Metall-Bohrung" (Pos3) 
-        // ein anderes Merkerwort. Im GRAFCET nutzte es Pos1.
-        // Ich verwende hier Pos3 gemaess deiner Tabelle.
-        C2 := DB1.Pos3; 
+        C2 := DB1.Pos1; 
         Teil_Metall := TRUE;
       END_IF;
       Schritt := 503; 
         
-    // --- Schritt 503: Teil vorschieben (zur Soll-Position) ---
+    // --- Schritt 503: Schlitten faehrt zur Soll-Position ---
     503: 
       // N-Aktion: Tisch Linksfahrt aktivieren
       sig_QA5 := TRUE; 
-      
+      // Inkrementgeber fuer Ist-Position in FB1 ("Position")
       // Transition: Warten, bis Ist-Position ("Position")
       // die Soll-Position (C2) erreicht hat.
       IF (Position >= C2) THEN
+        sig_QA5 := FALSE; 
         Schritt := 504; 
       END_IF;
         
@@ -132,7 +130,7 @@ BEGIN
       IF Schritt_POS_FL THEN TIMER_S504(IN := FALSE); END_IF;
       sig_MB22 := TRUE; 
       
-      TIMER_S504(IN := BG22, PT := T#1s); 
+      TIMER_S504(IN := "-BG22", PT := T#1s); 
       IF TIMER_S504.Q THEN
         Schritt := 505;
       END_IF;
@@ -142,16 +140,16 @@ BEGIN
       IF Schritt_POS_FL THEN TIMER_S505(IN := FALSE); END_IF;
       sig_MB21 := TRUE; 
       
-      TIMER_S505(IN := BG21, PT := T#5s);
+      TIMER_S505(IN := "-BG51", PT := T#5s);
       IF TIMER_S505.Q THEN
         Schritt := 506;
       END_IF;
 
     // --- Schritt 506: Sortier-Weiche ---
     506: 
-      // Fall 1: "Metall m. Bohrung" (Pos.2) ODER "Kunststoff" (Pos.1)
-      IF (C2 = Pos2) OR (Teil_Kunststoff) THEN 
-        Schritt := 507; // Kunststoff/Pos2-Ast
+      // Fall 1: Kunststoff" (Pos.1)
+      IF  (Teil_Kunststoff) THEN 
+        Schritt := 507; // Kunststoff auf Wippe abwerfen
       // Fall 2: "Metall o. Bohrung" (Pos.3)
       ELSIF (Teil_Metall) THEN 
         Schritt := 517; // Metall-Ast
@@ -182,7 +180,7 @@ BEGIN
       IF Schritt_POS_FL THEN TIMER_S507b(IN := FALSE); END_IF;
       sig_MB41 := TRUE; 
 
-      TIMER_S507b(IN := BG41, PT := T#2s);
+      TIMER_S507b(IN := "-BG41", PT := T#2s);
       IF TIMER_S507b.Q THEN
         Schritt := 537; 
       END_IF;
@@ -203,7 +201,7 @@ BEGIN
       IF Schritt_POS_FL THEN TIMER_S508(IN := FALSE); END_IF;
       sig_MB31 := TRUE; 
       
-      TIMER_S508(IN := BG31, PT := T#1s);
+      TIMER_S508(IN := "-BG51", PT := T#1s);
       IF TIMER_S508.Q THEN
         Schritt := 509; 
       END_IF;
@@ -212,18 +210,18 @@ BEGIN
     509: 
       sig_QA6 := TRUE; 
       
-      IF BG13 THEN 
+      IF "-BG51" THEN 
         Schritt := 510;
       END_IF;
 
     // --- Schritt 510: End-Warteschritt / Zyklus-Pruefung ---
     510: 
       // Pruefung 1: "Magazin leer"?
-      IF (BG21 AND NOT BG51 AND BG52) THEN
+      IF ("-BG51" AND NOT "-BG51" AND "BG52") THEN
         Schritt := 500; 
       
       // Pruefung 2: "Teil vorhanden"?
-      ELSIF (BG21 AND (BG51 OR NOT BG52)) THEN
+      ELSIF ("-BG51" AND ("-BG51" OR NOT "BG52")) THEN
         Schritt := 501; 
       END_IF;
         
