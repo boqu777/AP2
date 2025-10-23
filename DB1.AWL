@@ -1,18 +1,15 @@
 DATA_BLOCK "Positionen"
-TITLE =
+TITLE = Positionswerte
 VERSION : 0.1
 
 
   STRUCT 	
-   Pos1 : INT  := 100;	//Ablagepostion für Kunststoffteile
-   Pos2 : INT  := 75;	//Ablageposition für Metallteile mit Bohrung
-   Pos3 : INT  := 50;	//Ablageposition für Metallteile ohne Bohrung
+   Pos1 : INT  := 100;	//Ablagepostion Kunststoffteile
+   Pos2 : INT  := 75;	//Ablageposition Metallteile mit Bohrung
+   Pos3 : INT  := 50;	//Ablageposition Metallteile ohne Bohrung
    Pos4 : INT  := 25;	//Reserve Postion
   END_STRUCT ;	
 BEGIN
-   Pos1 := 0; 
-   Pos2 := 75; 
-   Pos3 := 50; 
-   Pos4 := 25; 
+   
 END_DATA_BLOCK
 
