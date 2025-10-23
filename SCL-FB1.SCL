@@ -1,0 +1,41 @@
+FUNCTION_BLOCK FB1 // FB_Positionierung (Globaler Zaehler)
+
+VAR // Interner Speicher des FBs
+  BG12_ALT : BOOL;
+END_VAR
+
+VAR_TEMP
+  BG12_FLANKE : BOOL;
+END_VAR
+
+BEGIN
+
+  // --- 1. Flankenerkennung fuer Inkrementalgeber BG12 ---
+  BG12_FLANKE := (BG12 AND NOT BG12_ALT);
+  BG12_ALT := BG12;
+  
+  
+  // --- 2. Zaehllogik (Richtungsabhaengig) ---
+  // Schreibt auf den globalen Merker "Position" (MW8)
+  
+  IF BG12_FLANKE THEN
+    
+    // Bei Linksfahrt (sig_QA5) hochzaehlen
+    IF sig_QA5 AND (Position < 999) THEN 
+      Position := Position + 1;
+      
+    // Bei Rechtsfahrt (sig_QA6) runterzaehlen
+    ELSIF sig_QA6 AND (Position > 0) THEN 
+      Position := Position - 1;
+    END_IF;
+    
+  END_IF; 
+
+
+  // --- 3. Referenzieren (Grundposition) ---
+  // Setzt den Zaehler auf 0, wenn Endlage Rechts (BG13) erreicht wird.
+  IF BG13 THEN
+    Position := 0;
+  END_IF;
+
+END_FUNCTION_BLOCK

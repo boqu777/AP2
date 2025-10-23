@@ -1,0 +1,46 @@
+FUNCTION_BLOCK FB0 // Betriebsartenwahl
+// Dieser Baustein wertet die Freigaben und den Wahlschalter aus,
+// um die aktive Betriebsart (Einrichten oder Automatik) zu bestimmen.
+
+VAR_OUTPUT
+  Einrichtbetrieb : BOOL := FALSE; // Ausgang: TRUE, wenn Einrichtbetrieb aktiv ist
+  Automatikbetrieb : BOOL := FALSE; // Ausgang: TRUE, wenn Automatikbetrieb aktiv ist
+END_VAR
+
+BEGIN
+
+  // --- 1. Grundstellung ---
+  // Zu Beginn jedes Zyklus werden beide Betriebsarten zurückgesetzt.
+  // Es kann immer nur eine Betriebsart aktiv sein.
+  Einrichtbetrieb := FALSE; 
+  Automatikbetrieb := FALSE;
+  
+  // --- 2. Prüfung der Freigabebedingungen ---
+  // Es werden die zentralen Freigaben (Sicherheitskette, Versorgung etc.) geprüft.
+  // Nur wenn ALLE Bedingungen erfüllt sind, darf eine Betriebsart angewählt werden.
+  //
+  // KE2: NOT-AUS quittiert / o.K.
+  // BP1: Betriebsdruck o.K.
+  // SJ3: Steuerung EIN
+  // FC7: Motorschutzschalter o.K.
+  IF (KE2 AND BP1 AND SJ3 AND FC7)THEN 
+  
+    // --- 3. Abfrage des Betriebsarten-Wahlschalters ---
+    // Die Eingänge (hier SJ4) werden ausgewertet, um die gewählte Art zu bestimmen.
+    
+    // SJ4 ist der Wahlschalter "Einricht-/Automatikbetrieb".
+    // Wenn SJ4 NICHT betätigt ist (FALSE), soll Einrichtbetrieb aktiv sein.
+    IF NOT SJ4 THEN
+      Einrichtbetrieb := TRUE; // Einrichtbetrieb setzen
+      
+    // Wenn SJ4 betätigt ist (TRUE), soll Automatikbetrieb aktiv sein.
+    ELSE
+      Automatikbetrieb := TRUE; // Automatikbetrieb setzen
+    END_IF;
+    
+  END_IF; // Ende der IF-Abfrage für Freigabebedingungen
+  
+  // Wenn die Freigabebedingungen (KE2, BP1, etc.) nicht erfüllt sind,
+  // bleiben beide Ausgänge FALSE (siehe Grundstellung oben).
+  
+END_FUNCTION_BLOCK

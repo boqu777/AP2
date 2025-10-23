@@ -1,0 +1,47 @@
+(* ====================================================================== *)
+(* FB100: TAKT *)
+(* Erzeugt einen 1Hz Taktsignal für Blinkfunktionen *)
+(* ====================================================================== *)
+FUNCTION_BLOCK FB100
+
+VAR_OUTPUT
+  Takt_1Hz         : BOOL; // 1Hz Taktsignal (500ms an, 500ms aus)
+END_VAR
+
+VAR
+  Timer_ON         : TON; // Timer für AN-Phase (500ms)
+  Timer_OFF        : TON; // Timer für AUS-Phase (500ms)
+  State            : INT; // 0 = AUS, 1 = AN
+END_VAR
+
+BEGIN
+  
+  CASE State OF
+    
+    0:
+      // Schritt 0: AUS-Phase
+      // AKTION: Taktsignal AUS, Timer für 500ms starten
+      Takt_1Hz := FALSE;
+      Timer_OFF(IN := TRUE, PT := T#500ms);
+      
+      // TRANSITION: 500ms abgelaufen
+      IF Timer_OFF.Q THEN
+        Timer_OFF(IN := FALSE);
+        State := 1;
+      END_IF;
+    
+    1:
+      // Schritt 1: AN-Phase
+      // AKTION: Taktsignal AN, Timer für 500ms starten
+      Takt_1Hz := TRUE;
+      Timer_ON(IN := TRUE, PT := T#500ms);
+      
+      // TRANSITION: 500ms abgelaufen
+      IF Timer_ON.Q THEN
+        Timer_ON(IN := FALSE);
+        State := 0;
+      END_IF;
+  
+  END_CASE;
+END_FUNCTION_BLOCK
+
