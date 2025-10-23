@@ -154,7 +154,7 @@ BEGIN
       ELSIF (Teil_Metall) THEN 
         Schritt := 517; // Metall-Ast
       ELSIF C2 = DB1.Pos2 THEN
-        Scchritt := 509;  
+        Schritt := 509;  
       END_IF;
         
     // --- Schritt 507: Wippe ausfahren (Kunststoff / Metall m. Bohrung) ---

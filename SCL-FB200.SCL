@@ -83,7 +83,7 @@ BEGIN
   
   // PF32: Magazin leer
   // AKTION: Meldeleuchte AN wenn keine Materialerkennung
-  "-PF32" := (NOT "-BG51" AND NOT "-BG52");
+  "-PF32" := (NOT "-BG51" AND "-BG52");
   
   // PF33: Magnet deaktiviert
   // AKTION: Meldeleuchte AN wenn Magnet-Schuetz AUS
