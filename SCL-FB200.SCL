@@ -63,7 +63,7 @@ BEGIN
   
   // PF8: Position erreicht
   // AKTION: Meldeleuchte AN wenn Position 1, 2, 3 oder 4 erreicht
-  "-PF8" := (Position = DB1.Pos1) OR (Position = DB1.Pos2) OR (Position = DB1.Pos3) OR (Position_C = DB1.Pos4);
+  "-PF8" := (Position = DB1.Pos1) OR (Position = DB1.Pos2) OR (Position = DB1.Pos3) OR (Position = DB1.Pos4);
   
   // PF10: Zylinder MM20 eingefahren
   // AKTION: Meldeleuchte spiegelt Zustand Sensor -BG21

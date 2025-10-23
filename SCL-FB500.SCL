@@ -122,7 +122,6 @@ BEGIN
       // die Soll-Position (C2) erreicht hat.
       IF (Position >= C2) THEN
         sig_QA5 := FALSE; 
-        
         Schritt := 504; 
       END_IF;
         
@@ -131,7 +130,7 @@ BEGIN
       IF Schritt_POS_FL THEN TIMER_S504(IN := FALSE); END_IF;
       sig_MB22 := TRUE; 
       
-      TIMER_S504(IN := "-BG22", PT := T#1s); 
+      TIMER_S504(IN := Schritt = 504, PT := T#1s); 
       IF TIMER_S504.Q THEN
         Schritt := 505;
       END_IF;
@@ -141,7 +140,7 @@ BEGIN
       IF Schritt_POS_FL THEN TIMER_S505(IN := FALSE); END_IF;
       sig_MB21 := TRUE; 
       
-      TIMER_S505(IN := "-BG51", PT := T#5s);
+      TIMER_S505(IN := "-BG21", PT := T#5s);
       IF TIMER_S505.Q THEN
         Schritt := 506;
       END_IF;
@@ -154,6 +153,8 @@ BEGIN
       // Fall 2: "Metall o. Bohrung" (Pos.3)
       ELSIF (Teil_Metall) THEN 
         Schritt := 517; // Metall-Ast
+      ELSIF C2 = DB1.Pos2 THEN
+        Scchritt := 509;  
       END_IF;
         
     // --- Schritt 507: Wippe ausfahren (Kunststoff / Metall m. Bohrung) ---
@@ -161,7 +162,7 @@ BEGIN
       IF Schritt_POS_FL THEN TIMER_S507(IN := FALSE); END_IF;
       sig_MB32 := TRUE; 
       
-      TIMER_S507(IN := BG32, PT := T#2s);
+      TIMER_S507(IN := "-BG32", PT := T#2s);
       IF TIMER_S507.Q THEN
         Schritt := 508; 
       END_IF;
@@ -171,7 +172,7 @@ BEGIN
       IF Schritt_POS_FL THEN TIMER_S507a(IN := FALSE); END_IF;
       sig_MB42 := TRUE; 
       
-      TIMER_S507a(IN := BG42, PT := T#2s);
+      TIMER_S507a(IN := "-BG42", PT := T#2s);
       IF TIMER_S507a.Q THEN
         Schritt := 527; 
       END_IF;
@@ -192,7 +193,7 @@ BEGIN
       sig_QA61 := TRUE; 
       sig_MB32 := TRUE; 
       
-      TIMER_S507c(IN := BG32, PT := T#2s);
+      TIMER_S507c(IN := "-BG32", PT := T#2s);
       IF TIMER_S507c.Q THEN
         Schritt := 508; 
       END_IF;
@@ -201,8 +202,8 @@ BEGIN
     508: 
       IF Schritt_POS_FL THEN TIMER_S508(IN := FALSE); END_IF;
       sig_MB31 := TRUE; 
-      sig_QA61 := TRUE;
-      TIMER_S508(IN := "-BG51", PT := T#1s);
+      sig_QA61 := FALSE;
+      TIMER_S508(IN := "-BG31", PT := T#1s);
       IF TIMER_S508.Q THEN
         Schritt := 509; 
       END_IF;
@@ -211,18 +212,18 @@ BEGIN
     509: 
       sig_QA6 := TRUE; 
       
-      IF "-BG51" THEN 
+      IF "-BG13" THEN 
         Schritt := 510;
       END_IF;
 
     // --- Schritt 510: End-Warteschritt / Zyklus-Pruefung ---
     510: 
       // Pruefung 1: "Magazin leer"?
-      IF ("-BG51" AND NOT "-BG51" AND "BG52") THEN
+      IF ("-BG21" AND NOT "-BG51" AND "-BG52") THEN
         Schritt := 500; 
       
       // Pruefung 2: "Teil vorhanden"?
-      ELSIF ("-BG51" AND ("-BG51" OR NOT "BG52")) THEN
+      ELSIF ("-BG21" AND ("-BG51" OR NOT "-BG52")) THEN
         Schritt := 501; 
       END_IF;
         
