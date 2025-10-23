@@ -1,3 +1,11 @@
+(* ====================================================================== *)
+(* FB1: POSITIONSERFASSUNG                                                *)
+(*                                                                        *)
+(* Verwaltet den globalen Positionszaehler (Variable "Position", MW8).    *)
+(* Zaehlt hoch/runter basierend auf dem Inkrementalgeber -BG12 und der    *)
+(* aktiven Fahrtrichtung (sig_QA5 = Linksfahrt / sig_QA6 = Rechtsfahrt).  *)
+(* Setzt den Zaehler bei Erreichen des Referenzschalters -BG13 auf 0.     *)
+(* ====================================================================== *)
 FUNCTION_BLOCK FB1 // FB_Positionierung (Globaler Zaehler)
 
 VAR // Interner Speicher des FBs
@@ -11,9 +19,8 @@ END_VAR
 BEGIN
 
   // --- 1. Flankenerkennung fuer Inkrementalgeber BG12 ---
-  BG12_FLANKE := (BG12 AND NOT BG12_ALT);
-  BG12_ALT := BG12;
-  
+  BG12_FLANKE := ("-BG12" AND NOT BG12_ALT);
+  BG12_ALT := "-BG12";
   
   // --- 2. Zaehllogik (Richtungsabhaengig) ---
   // Schreibt auf den globalen Merker "Position" (MW8)
@@ -31,10 +38,9 @@ BEGIN
     
   END_IF; 
 
-
   // --- 3. Referenzieren (Grundposition) ---
   // Setzt den Zaehler auf 0, wenn Endlage Rechts (BG13) erreicht wird.
-  IF BG13 THEN
+  IF "-BG13" THEN
     Position := 0;
   END_IF;
 

@@ -1,10 +1,11 @@
 
 (* ====================================================================== *)
-(* FB0: Betriebsartenwahl *)
-(* Dieser Baustein wertet die Sicherheitsbedingungen und den Wahlschalter -SJ4 aus,
-(* um die aktive Betriebsart (Einricht oder Automatik) zu bestimmen.*)
+(* FB0: BETRIEBSARTENWAHL                                                 *)
+(*                                                                        *)
+(* Ermittelt die aktive Betriebsart (Automatik/Einrichten).               *)
+(* Wertet dafuer die zentralen Freigaben (Not-Aus, Druck, Steuerung EIN)  *)
+(* und den Wahlschalter -SJ4 aus.                                         *)
 (* ====================================================================== *)
-
 
 FUNCTION_BLOCK FB0 // Betriebsartenwahl
 

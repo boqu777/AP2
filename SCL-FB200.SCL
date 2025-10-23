@@ -32,7 +32,7 @@ BEGIN
   END_IF;
   
   // PF2: Grundstellung-Anzeige
-  // AKTION: Meldeleuchte AN wenn Achse rechts, alle Zylinder eingefahren, Magnet aus
+  // AKTION: Meldeleuchte AN wenn Achse rechts, alle Zylinder eingefahren, Magnet aktiv
   "-PF2" := ("-BG13" AND "-BG21" AND "-BG31" AND "-BG41" AND NOT "-QA61");
   
   // PF3: Betriebsart-Anzeige

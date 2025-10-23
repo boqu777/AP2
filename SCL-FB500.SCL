@@ -1,3 +1,11 @@
+(* ====================================================================== *)
+(* FB500: AUTOMATIKBETRIEB (ABLAUFSTEUERUNG)                              *)
+(*                                                                        *)
+(* Beinhaltet die zentrale Schrittkette (CASE-Anweisung) fuer den         *)
+(* vollstaendigen Automatik-Ablauf.                                       *)
+(* Steuert Teileerkennung, Positionierung, Sortierung und Rueckfahrt.     *)
+(* ====================================================================== *)
+
 FUNCTION_BLOCK FB500 // Automatik-Betriebsablauf
 
 VAR_INPUT
@@ -36,7 +44,6 @@ BEGIN
     TIMER_S507b(IN := FALSE);
     TIMER_S507c(IN := FALSE);
     TIMER_S508(IN := FALSE);
-    
     // 2. Bearbeitung beenden (KEINE Ausgaenge beschreiben!)
     RETURN;
   END_IF;

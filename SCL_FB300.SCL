@@ -1,3 +1,11 @@
+(* ====================================================================== *)
+(* FB300: EINRICHTBETRIEB (HANDBETRIEB)                                   *)
+(*                                                                        *)
+(* Steuert alle manuellen Aktor-Bewegungen im Tipp-Betrieb.               *)
+(* Ist nur aktiv, wenn die globale Variable "Einrichtbetrieb" TRUE ist.   *)
+(* Liest die Taster (-SJ6 bis -SJ12) und steuert Achsen/Zylinder direkt.  *)
+(* ====================================================================== *)
+
 FUNCTION_BLOCK FB300 // Einrichtbetrieb (Handbetrieb)
 
 VAR_INPUT
