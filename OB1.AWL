@@ -20,7 +20,7 @@ BEGIN
 NETWORK
   TITLE = "1. Betriebsartenwahl (FB0) aufrufen"
 
-    CALL "FB0 Betriebsartenwahl" , DB10 // Instanz-DB (z.B. DB10)
+    CALL "FB0 Betriebsartenwahl" , DB10 // Instanz-DB 
        (Einrichtbetrieb  := "Einrichtbetrieb",      // M 1.1
         Automatikbetrieb := "Automatikbetrieb");   // M 1.2
 

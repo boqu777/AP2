@@ -36,57 +36,57 @@ BEGIN // Start der FB300-Logik
     
     // -- Steuerung X-Achse (SR-Logik mit Vorrang Reset) --
     // (Der FB1 im OB1 wertet sig_QA5/QA6 aus und zaehlt "Position")
-    IF (SJ6 AND NOT SJ7 AND NOT BG11 AND NOT sig_QA6) THEN
+    IF ("-SJ6" AND NOT "-SJ7" AND NOT "-BG11" AND NOT sig_QA6) THEN
       sig_QA5 := TRUE;
-    ELSIF BG11 OR (SJ7 AND NOT SJ6) THEN 
+    ELSIF "-BG11" OR ("-SJ7" AND NOT "-SJ6") THEN 
       sig_QA5 := FALSE;
     END_IF;
-    IF (SJ7 AND NOT SJ6 AND NOT BG13 AND NOT sig_QA5) THEN
+    IF ("-SJ7" AND NOT "-SJ6" AND NOT "-BG13" AND NOT sig_QA5) THEN
       sig_QA6 := TRUE;
-    ELSIF BG13 OR (SJ6 AND NOT SJ7) THEN
+    ELSIF "-BG13" OR ("-SJ6" AND NOT "-SJ7") THEN
       sig_QA6 := FALSE;
     END_IF;
     
     // -- Steuerung Zylinder MM20 (Magazin) (SR-Logik) --
-    IF (SJ8 AND NOT SJ9 AND NOT BG21) THEN // Einfahren
+    IF ("-SJ8" AND NOT "-SJ9" AND NOT "-BG21") THEN // Einfahren
       sig_MB21 := TRUE;
-    ELSIF BG21 OR (SJ9 AND NOT SJ8) THEN
+    ELSIF "-BG21" OR ("-SJ9" AND NOT "-SJ8") THEN
       sig_MB21 := FALSE;
     END_IF;
-    IF (SJ9 AND NOT SJ8 AND NOT BG22) THEN // Ausfahren
+    IF ("-SJ9" AND NOT "-SJ8" AND NOT "-BG22") THEN // Ausfahren
       sig_MB22 := TRUE;
-    ELSIF BG22 OR (SJ8 AND NOT SJ9) THEN
+    ELSIF "-BG22" OR ("-SJ8" AND NOT "-SJ9") THEN
       sig_MB22 := FALSE;
     END_IF;
     
     // -- Steuerung Zylinder MM30 (Wippe) (Selbsthaltung) --
-    IF (NOT SJ10) THEN // Taster nach unten -> Einfahren
+    IF (NOT "-SJ10") THEN // Taster nach unten -> Einfahren
       sig_MB31 := TRUE;
-    ELSIF BG31 THEN // Endlage erreicht -> Ruecksetzen
+    ELSIF "-BG31" THEN // Endlage erreicht -> Ruecksetzen
       sig_MB31 := FALSE;
     END_IF;
-    IF (SJ10 AND NOT BG32) THEN // Taster nach oben -> Ausfahren
+    IF ("-SJ10" AND NOT "-BG32") THEN // Taster nach oben -> Ausfahren
       sig_MB32 := TRUE;
-    ELSIF BG32 OR (NOT SJ10) THEN // Endlage ODER Taster losgelassen
+    ELSIF "-BG32" OR (NOT "-SJ10") THEN // Endlage ODER Taster losgelassen
       sig_MB32 := FALSE;
     END_IF;
 
     // -- Steuerung Zylinder MM40 (Magnet) (Selbsthaltung) --
-    IF (NOT SJ11) THEN // Taster nach unten -> Einfahren
+    IF (NOT "-SJ11") THEN // Taster nach unten -> Einfahren
       sig_MB41 := TRUE;
-    ELSIF BG41 THEN // Endlage erreicht -> Ruecksetzen
+    ELSIF "-BG41" THEN // Endlage erreicht -> Ruecksetzen
       sig_MB41 := FALSE;
     END_IF;
-    IF (SJ11 AND NOT BG42) THEN // Taster nach oben -> Ausfahren
+    IF ("-SJ11" AND NOT "-BG42") THEN // Taster nach oben -> Ausfahren
       sig_MB42 := TRUE;
-    ELSIF BG42 OR (NOT SJ11) THEN // Endlage ODER Taster losgelassen
+    ELSIF "-BG42" OR (NOT "-SJ11") THEN // Endlage ODER Taster losgelassen
       sig_MB42 := FALSE;
     END_IF;
 
     // -- Steuerung Magnet-Schuetz QA61 (mit TOF-Timer) --
     // Magnet (sig_QA61) ist AN, wenn SJ12 gedrueckt wird.
     // Wenn SJ12 losgelassen wird, bleibt er noch 5s AN.
-    TIMER_QA61(IN := SJ12, PT := T#5s);
+    TIMER_QA61(IN := "-SJ12", PT := T#5s);
     sig_QA61 := TIMER_QA61.Q;
 
   ELSE

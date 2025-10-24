@@ -30,14 +30,14 @@ BEGIN
   // BP1: Betriebsdruck o.K.
   // SJ3: Steuerung EIN
   // FC7: Motorschutzschalter o.K.
-  IF (KE2 AND BP1 AND SJ3 AND FC7)THEN 
+  IF ("-KE2" AND "-BP1" AND "-SJ3" AND "-FC7")THEN 
   
     // --- 3. Abfrage des Betriebsarten-Wahlschalters ---
     // Die Eingaenge (hier SJ4) werden ausgewertet, um die gewaehlte Art zu bestimmen.
     
     // SJ4 ist der Wahlschalter "Einricht-/Automatikbetrieb".
     // Wenn SJ4 NICHT beteatigt ist (FALSE), soll Einrichtbetrieb aktiv sein.
-    IF NOT SJ4 THEN
+    IF NOT "-SJ4" THEN
       Einrichtbetrieb := TRUE; // Einrichtbetrieb setzen
       
     // Wenn SJ4 betaetigt ist (TRUE), soll Automatikbetrieb aktiv sein.
