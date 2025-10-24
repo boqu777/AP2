@@ -4,10 +4,10 @@ VERSION : 0.1
 
 
   STRUCT 	
-   Pos1 : INT  := 100;	//Ablagepostion Kunststoffteile
+   Pos1 : INT  := 100;	//Ablagepostion Kunststoffteile und  Metallteile ohne Bohrung
    Pos2 : INT  := 75;	//Ablageposition Metallteile mit Bohrung
-   Pos3 : INT  := 50;	//Ablageposition Metallteile ohne Bohrung
-   Pos4 : INT  := 25;	//Reserve Postion
+   Pos3 : INT  := 50;	//Reserve Position
+   Pos4 : INT  := 25;	//Reserve Position
   END_STRUCT ;	
 BEGIN
    

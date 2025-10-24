@@ -55,11 +55,11 @@ BEGIN
   
   // PF6: Linksfahrt blinkend
   // AKTION: Meldeleuchte blinkt weahrend X-Achse nach links faehrt
-  "-PF6" := (sig_QA5 AND Takt_1Hz);
+  "-PF6" := ("-QA5" AND Takt_1Hz);
   
   // PF7: Rechtsfahrt blinkend
   // AKTION: Meldeleuchte blinkt weahrend X-Achse nach rechts faehrt
-  "-PF7" := (sig_QA6 AND Takt_1Hz);
+  "-PF7" := ("-QA6" AND Takt_1Hz);
   
   // PF8: Position erreicht
   // AKTION: Meldeleuchte AN wenn Position 1, 2, 3 oder 4 erreicht
