@@ -1,6 +1,6 @@
 (* ====================================================================== *)
 (* FB200: ANZEIGE                                                         *)
-(* Steuert alle Meldeleuchten basierend auf Anlagenzustand                 *)
+(* Steuert alle Meldeleuchten basierend auf Anlagenzustand                *)
 (* ====================================================================== *)
 (* Autor: Boris Quade                                                     *)
 (* Datum: 27.06.2024                                                      *)

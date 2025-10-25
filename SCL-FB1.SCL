@@ -1,6 +1,5 @@
 (* ====================================================================== *)
 (* FB1: POSITIONSERFASSUNG                                                *)
-(*                                                                        *)
 (* Verwaltet den globalen Positionszaehler (Variable "Position", MW8).    *)
 (* Zaehlt hoch/runter basierend auf dem Inkrementalgeber -BG12 und der    *)
 (* aktiven Fahrtrichtung (sig_QA5 = Linksfahrt / sig_QA6 = Rechtsfahrt).  *)

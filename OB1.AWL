@@ -73,7 +73,7 @@ NETWORK
         Position         := "Position");          // MW 8
 
 // --- Netzwerk 7: Aktionen und Ausgaenge ---
-// Ruft FB600 auf. Dieser Baustein enthaelt
+// Ruft FB600:Aktionen auf. Dieser Baustein enthaelt
 // die gegenseitigen Verriegelungen (z.B. QA5/QA6)
 // und weist die internen Signale (sig_...)
 // den Hardware-Ausgaengen (QA..., MB...) zu.
