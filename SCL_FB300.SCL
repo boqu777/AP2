@@ -1,9 +1,5 @@
 (* ====================================================================== *)
 (* FB300: EINRICHTBETRIEB (HANDBETRIEB)                                   *)
-(*                                                                        *)
-(* Steuert alle manuellen Aktor-Bewegungen im Tipp-Betrieb.               *)
-(* Ist nur aktiv, wenn die globale Variable "Einrichtbetrieb" TRUE ist.   *)
-(* Liest die Taster (-SJ6 bis -SJ12) und steuert Achsen/Zylinder direkt.  *)
 (* ====================================================================== *)
 
 FUNCTION_BLOCK FB300 // Einrichtbetrieb (Handbetrieb)
@@ -13,90 +9,95 @@ VAR_INPUT
 END_VAR
 
 VAR
-  // Interne Variablen des FBs
-  TIMER_QA61      : TOF;  // Timer fuer Magnet-Abschaltung (5s Nachlauf)
+  // Timer_QA61 : TON; // Timer T1 (TON) fuer Magnet-Schuetz -obsolet nach Umruestung
 END_VAR
 
 BEGIN // Start der FB300-Logik
-  
+
   // --- 0. SCHUTZBEDINGUNG (Guard Clause) ---
-  // Prueft, ob der Baustein ueberhaupt aktiv sein soll.
-  IF Einrichtbetrieb THEN
-    sig_QA5 := FALSE; 
-    sig_MB22 := FALSE; 
-    sig_MB21 := FALSE; 
-    sig_MB31 := FALSE; 
-    sig_MB32 := FALSE; 
-    sig_MB41 := FALSE; 
-    sig_MB42 := FALSE; 
-    sig_QA61 := FALSE; 
-    sig_QA6 := FALSE;
-    
-     // --- HANDBETRIEB AKTIV ---
-    
+  IF Einrichtbetrieb THEN // Tippbetrieb nur aktiv, wenn Einrichtbetrieb angewählt ist
+
+    // --- HANDBETRIEB AKTIV ---
+
     // -- Steuerung X-Achse (SR-Logik mit Vorrang Reset) --
-    // (Der FB1 im OB1 wertet sig_QA5/QA6 aus und zaehlt "Position")
     IF ("-SJ6" AND NOT "-SJ7" AND NOT "-BG11" AND NOT sig_QA6) THEN
       sig_QA5 := TRUE;
-    ELSIF "-BG11" OR ("-SJ7" AND NOT "-SJ6") THEN 
+    ELSIF "-BG11" OR ("-SJ7" AND NOT "-SJ6") THEN
       sig_QA5 := FALSE;
     END_IF;
+
     IF ("-SJ7" AND NOT "-SJ6" AND NOT "-BG13" AND NOT sig_QA5) THEN
       sig_QA6 := TRUE;
     ELSIF "-BG13" OR ("-SJ6" AND NOT "-SJ7") THEN
       sig_QA6 := FALSE;
     END_IF;
-    
+
     // -- Steuerung Zylinder MM20 (Magazin) (SR-Logik) --
     IF ("-SJ8" AND NOT "-SJ9" AND NOT "-BG21") THEN // Einfahren
       sig_MB21 := TRUE;
     ELSIF "-BG21" OR ("-SJ9" AND NOT "-SJ8") THEN
       sig_MB21 := FALSE;
     END_IF;
+
     IF ("-SJ9" AND NOT "-SJ8" AND NOT "-BG22") THEN // Ausfahren
       sig_MB22 := TRUE;
     ELSIF "-BG22" OR ("-SJ8" AND NOT "-SJ9") THEN
       sig_MB22 := FALSE;
     END_IF;
-    
+
     // -- Steuerung Zylinder MM30 (Wippe) (Selbsthaltung) --
     IF (NOT "-SJ10") THEN // Taster nach unten -> Einfahren
       sig_MB31 := TRUE;
     ELSIF "-BG31" THEN // Endlage erreicht -> Ruecksetzen
       sig_MB31 := FALSE;
     END_IF;
+
     IF ("-SJ10" AND NOT "-BG32") THEN // Taster nach oben -> Ausfahren
       sig_MB32 := TRUE;
     ELSIF "-BG32" OR (NOT "-SJ10") THEN // Endlage ODER Taster losgelassen
       sig_MB32 := FALSE;
     END_IF;
 
-    // -- Steuerung Zylinder MM40 (Magnet) (Selbsthaltung) --
-    IF (NOT "-SJ11") THEN // Taster nach unten -> Einfahren
-      sig_MB41 := TRUE;
-    ELSIF "-BG41" THEN // Endlage erreicht -> Ruecksetzen
-      sig_MB41 := FALSE;
-    END_IF;
-    IF ("-SJ11" AND NOT "-BG42") THEN // Taster nach oben -> Ausfahren
-      sig_MB42 := TRUE;
-    ELSIF "-BG42" OR (NOT "-SJ11") THEN // Endlage ODER Taster losgelassen
-      sig_MB42 := FALSE;
-    END_IF;
+    // -- Steuerung Zylinder MM40 (Magnet) -- -obsolet nach Umruestung
+    // IF ("-SJ11" AND NOT "-SJ12" AND NOT "-BG41") THEN // Einfahren
+    //   sig_MB41 := TRUE;
+    // ELSIF "-BG41" OR ("-SJ12" AND NOT "-SJ11") THEN
+    //   sig_MB41 := FALSE;
+    // END_IF;
+    //
+    // IF ("-SJ12" AND NOT "-SJ11" AND NOT "-BG42") THEN // Ausfahren
+    //   sig_MB42 := TRUE;
+    // ELSIF "-BG42" OR ("-SJ11" AND NOT "-SJ12") THEN
+    //   sig_MB42 := FALSE;
+    // END_IF;
 
-    // -- Steuerung Magnet-Schuetz QA61 (mit TOF-Timer) --
-    // Magnet (sig_QA61) ist AN, wenn SJ12 gedrueckt wird.
-    // Wenn SJ12 losgelassen wird, bleibt er noch 5s AN.
-    TIMER_QA61(IN := "-SJ12", PT := T#5s);
-    sig_QA61 := TIMER_QA61.Q;
+    // -- Steuerung Magnet-Schuetz QA61 -- -obsolet nach Umruestung
+    // IF ("-SJ12" AND NOT "-SJ11") THEN // Taster "Magnet EIN"
+    //   sig_QA61 := TRUE;
+    // ELSIF ("-SJ11" AND NOT "-SJ12") THEN // Taster "Magnet AUS"
+    //   sig_QA61 := FALSE;
+    // END_IF;
+    //
+    // // Timer-Aufruf
+    // Timer_QA61(IN := sig_QA61, PT := T#3s);
 
-  ELSE
-    
-    
-    // Timer ebenfalls zuruecksetzen
-    TIMER_QA61(IN := FALSE);
 
-    // Bearbeitung beenden
-    RETURN; 
+  ELSE // --- HANDBETRIEB NICHT AKTIV ---
+
+    // Alle Signale auf FALSE setzen, wenn Einrichtbetrieb verlassen wird
+    sig_QA5  := FALSE;
+    sig_MB22 := FALSE;
+    sig_MB21 := FALSE;
+    sig_MB31 := FALSE;
+    sig_MB32 := FALSE;
+    // sig_MB41 := FALSE; -obsolet nach Umruestung
+    // sig_MB42 := FALSE; -obsolet nach Umruestung
+    // sig_QA61 := FALSE; -obsolet nach Umruestung
+    sig_QA6  := FALSE;
+
+    // Timer_QA61(IN := FALSE); -obsolet nach Umruestung
+
+    RETURN; // Bearbeitung beenden
   END_IF;
 
 END_FUNCTION_BLOCK

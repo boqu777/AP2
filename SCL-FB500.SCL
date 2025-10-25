@@ -1,243 +1,248 @@
 (* ====================================================================== *)
 (* FB500: AUTOMATIKBETRIEB (ABLAUFSTEUERUNG)                              *)
-(*                                                                        *)
-(* Beinhaltet die zentrale Schrittkette (CASE-Anweisung) fuer den         *)
-(* vollstaendigen Automatik-Ablauf.                                       *)
-(* Steuert Teileerkennung, Positionierung, Sortierung und Rueckfahrt.     *)
 (* ====================================================================== *)
 
 FUNCTION_BLOCK FB500 // Automatik-Betriebsablauf
 
 VAR_INPUT
-  // Dieser Eingang muss von FB0 (Betriebsartenwahl) kommen
-  Automatikbetrieb : BOOL; 
+  Automatikbetrieb : BOOL; // Dieser Eingang muss von FB0 kommen
 END_VAR
 
-VAR // Statische Variablen (behalten ihren Wert)
-  
+VAR // Statische Variablen
   Schritt         : INT := 500; // Aktuelle Schrittnummer, 500 = Initialschritt
-  Schritt_ALT     : INT;        
-  Schritt_POS_FL  : BOOL;       // Ist TRUE fuer genau 1 Zyklus bei Schrittwechsel
-  
+  Schritt_ALT     : INT;
+  Schritt_POS_FL  : BOOL; // Ist TRUE fuer genau 1 Zyklus bei Schrittwechsel
+
   // Timer-Instanzen
-  TIMER_S504      : TON; // 1s Verzoegerung bei "-BG21"
-  TIMER_S505      : TON; // 5s Verzoegerung bei "-BG22"
+  TIMER_S504      : TON; // 1s Verzoegerung bei "-BG22"
+  TIMER_S505      : TON; // 5s Verzoegerung bei "-BG21"
   TIMER_S507      : TON; // 2s Verzoegerung bei "-BG32"
-  TIMER_S507a     : TON; // 2s Verzoegerung bei "-BG42" (fuer Schritt 517)
-  TIMER_S507b     : TON; // 2s Verzoegerung bei "-BG41" (fuer Schritt 527)
-  TIMER_S507c     : TON; // 2s Verzoegerung bei "-BG32" (fuer Schritt 537)
+  // TIMER_S507a     : TON; // 2s Verzoegerung bei "-BG42" -obsolet nach Umruestung
+  // TIMER_S507b     : TON; // 2s Verzoegerung bei "-BG41" -obsolet nach Umruestung
+  TIMER_S507c     : TON; // Timeout fuer Schritt 507a (Warten auf Entnahme) - nach Umruestung
   TIMER_S508      : TON; // 1s Verzoegerung bei "-BG31"
 END_VAR
 
+VAR_TEMP
+  // Temporäre Variable für Flankenerkennung SJ12 - neu nach Umruestung
+  SJ12_ALT : BOOL := FALSE;
+  SJ12_POS_FL : BOOL;
+END_VAR
 
 BEGIN
 
   // --- 0. SCHUTZBEDINGUNG (Guard Clause) ---
   IF NOT Automatikbetrieb THEN
-    
-    // 1. Interne Variablen zuruecksetzen
     Schritt := 500;
     TIMER_S504(IN := FALSE);
     TIMER_S505(IN := FALSE);
     TIMER_S507(IN := FALSE);
-    TIMER_S507a(IN := FALSE);
-    TIMER_S507b(IN := FALSE);
+    // TIMER_S507a(IN := FALSE); -obsolet nach Umruestung
+    // TIMER_S507b(IN := FALSE); -obsolet nach Umruestung
     TIMER_S507c(IN := FALSE);
-    TIMER_S508(IN := FALSE);
-    // 2. Bearbeitung beenden (KEINE Ausgaenge beschreiben!)
+    SJ12_ALT := FALSE; // Rücksetzen bei Verlassen des Automatikbetriebs - neu nach Umruestung
     RETURN;
-  END_IF;
-  
-  // --- AB HIER: Code wird nur ausgefuehrt, wenn Automatikbetrieb = TRUE ---
+  END_IF; // --- AB HIER: Code wird nur ausgeführt, wenn Automatikbetrieb = TRUE ---
 
-  // --- 1. Flankenerkennung (fuer L-Aktionen) ---
+  // --- 1. Flankenerkennung Schrittwechsel (fuer L-Aktionen) ---
   Schritt_POS_FL := (Schritt <> Schritt_ALT);
   Schritt_ALT    := Schritt;
 
+  // --- 1a. Flankenerkennung Taster Entnahme SJ12 --- neu nach Umruestung
+  SJ12_POS_FL := ("-SJ12" AND NOT SJ12_ALT);
+  SJ12_ALT    := "-SJ12";
+
   // --- 2. Grundstellung (fuer N-Aktionen) ---
-  // Loescht alle "haengenden" Signale aus dem Einrichtbetrieb
-  sig_QA5  := FALSE; 
-  sig_MB22 := FALSE; 
-  sig_MB21 := FALSE; 
-  sig_MB31 := FALSE; 
-  sig_MB32 := FALSE; 
-  sig_MB41 := FALSE; 
-  sig_MB42 := FALSE; 
-  sig_QA61 := FALSE; 
-  sig_QA6  := FALSE; 
-  
+  sig_QA5  := FALSE;
+  sig_MB22 := FALSE;
+  sig_MB21 := FALSE;
+  sig_MB31 := FALSE;
+  sig_MB32 := FALSE;
+  // sig_MB41 := FALSE; -obsolet nach Umruestung
+  // sig_MB42 := FALSE; -obsolet nach Umruestung
+  // sig_QA61 := FALSE; -obsolet nach Umruestung
+  sig_QA6  := FALSE;
+
   // --- 3. Schrittkette (Ablaufsteuerung) ---
   CASE Schritt OF
-    
+
     // --- Schritt 500: Initialschritt / Grundstellung ---
-    500: 
-      // L-Aktion: Merker zuruecksetzen
+    500:
       IF Schritt_POS_FL THEN
-        Teil_Kunststoff := FALSE; 
-        Teil_Metall     := FALSE; 
+        Teil_Kunststoff := FALSE;
+        Teil_Metall     := FALSE;
       END_IF;
-      
+
       // Transition: Warten auf Grundstellung, Teile im Magazin und Startbefehl -SJ5
-      IF ("-SJ5" AND "-BG13" AND "-BG21" AND "-BG31" 
-          AND "-BG41" AND ("-BG51" OR NOT "-BG52")) THEN
-        Schritt := 501; 
+      IF ("-SJ5" AND "-BG13" AND "-BG21" AND "-BG31" AND ("-BG51" OR NOT "-BG52")) THEN // AND "-BG41" -obsolet nach Umruestung
+        Schritt := 501;
       END_IF;
 
     // --- Schritt 501: Teileerkennung ---
-    501: 
-      // Transition: Alternative Verzweigung (Teile pruefen)
+    501:
       IF ("-BG51" AND "-BG52") THEN         // "Metall mit Bohrung"
-        Schritt := 502; 
+        Schritt := 502;
       ELSIF (NOT "-BG51" AND NOT "-BG52") THEN // "Kunststoff"
-        Schritt := 512; 
+        Schritt := 512;
       ELSIF ("-BG51" AND NOT "-BG52") THEN // "Metall ohne Bohrung"
-        Schritt := 522; 
+        Schritt := 522;
       END_IF;
-        
-    // --- Schritt 502: Teil = "Metall mit Bohrung" ---
-    502: 
-      // L-Aktion: Lade Soll-Position C2 (aus DB1)
-      IF Schritt_POS_FL THEN
-        C2 := DB1.Pos2;
-      END_IF;
-      Schritt := 503; 
 
-    // --- Schritt 512: Teil = "Kunststoff" (502a) ---
-    512: 
-      // L-Aktion: Lade Soll-Position C2 (aus DB1)
+    // --- Schritt 502: Teil = "Metall mit Bohrung" ---
+    502:
       IF Schritt_POS_FL THEN
-        C2 := DB1.Pos1;
+        C2 := DB1.Pos2; // Zielposition für Metall mit Bohrung
+      END_IF;
+      Schritt := 503;
+
+    // --- Schritt 512: Teil = "Kunststoff" ---
+    512:
+      IF Schritt_POS_FL THEN
+        C2 := DB1.Pos1; // Zielposition für Kunststoff
         Teil_Kunststoff := TRUE;
       END_IF;
-      Schritt := 503; 
+      Schritt := 503;
 
-    // --- Schritt 522: Teil = "Metall ohne Bohrung" (502b) ---
-    522: 
-      // L-Aktion: Lade Soll-Position C2 (aus DB1)
+    // --- Schritt 522: Teil = "Metall ohne Bohrung" ---
+    522:
       IF Schritt_POS_FL THEN
-        C2 := DB1.Pos1; 
+        C2 := DB1.Pos3; // Geaendert von DB1.Pos1 - nach Umruestung
         Teil_Metall := TRUE;
       END_IF;
-      Schritt := 503; 
-        
-    // --- Schritt 503: Schlitten faehrt zur Soll-Position ---
-    503: 
-      // N-Aktion: Tisch Linksfahrt aktivieren
-      sig_QA5 := TRUE; 
-      // Inkrementgeber fuer Ist-Position in FB1 ("Position")
-      // Transition: Warten, bis Ist-Position ("Position")
-      // die Soll-Position (C2) erreicht hat.
+      Schritt := 503;
+
+    // --- Schritt 503: Schlitten fährt zur Soll-Position ---
+    503:
+      sig_QA5 := TRUE; // Tisch Linksfahrt aktivieren
+
+      // Transition: Warten, bis Ist-Position (Position) >= Soll-Position (C2)
       IF (Position >= C2) THEN
-        sig_QA5 := FALSE; 
-        Schritt := 504; 
+        sig_QA5 := FALSE;
+        Schritt := 504;
       END_IF;
-        
-    // --- Schritt 504: Zylinder MM20 ausfahren --- Bauteil aus dem Magazin schieben
-    504: 
+
+    // --- Schritt 504: Zylinder MM20 ausfahren (Bauteil aus Magazin schieben) ---
+    504:
       IF Schritt_POS_FL THEN TIMER_S504(IN := FALSE); END_IF;
-      sig_MB22 := TRUE; 
-      
-      TIMER_S504(IN := Schritt = 504, PT := T#1s); 
+      sig_MB22 := TRUE;
+
+      // Transition: Warten auf Sensor -BG22 (ausgefahren) oder Zeitablauf
+      TIMER_S504(IN := "-BG22", PT := T#1s);
       IF TIMER_S504.Q THEN
         Schritt := 505;
       END_IF;
 
     // --- Schritt 505: Zylinder MM20 einfahren ---
-    505: 
+    505:
       IF Schritt_POS_FL THEN TIMER_S505(IN := FALSE); END_IF;
-      sig_MB21 := TRUE; 
-      
+      sig_MB21 := TRUE;
+
+      // Transition: Warten auf Sensor -BG21 (eingefahren) oder Zeitablauf
       TIMER_S505(IN := "-BG21", PT := T#5s);
       IF TIMER_S505.Q THEN
         Schritt := 506;
       END_IF;
 
     // --- Schritt 506: Sortier-Weiche ---
-    506: 
-      // Fall 1: Kunststoff" (Pos.1)
-      IF  (Teil_Kunststoff) THEN 
-        Schritt := 507; // Kunststoff auf Wippe abwerfen
-      // Fall 2: "Metall o. Bohrung" (Pos.3)
-      ELSIF (Teil_Metall) THEN 
-        Schritt := 517; // Metall-Ast
-      ELSIF C2 = DB1.Pos2 THEN
-        Schritt := 509;  
+    506:
+      IF Teil_Kunststoff THEN // Fall 1: Kunststoff (C2=Pos1) -> Wippe
+        Schritt := 507;
+      ELSIF Teil_Metall THEN // Fall 2: Metall ohne Bohrung (C2=Pos3) -> Wippe
+        Schritt := 507; // Geaendert von 517 (Magnet-Ast entfaellt) - nach Umruestung
+      ELSIF (C2 = DB1.Pos2) THEN // Fall 3: Metall mit Bohrung (C2=Pos2) -> Warten
+        Schritt := 507a; // Neuer Schritt zum Warten - nach Umruestung
+      ELSE // Sicherheitsfall -> zurück zur Grundstellung
+        Schritt := 509;
       END_IF;
-        
-    // --- Schritt 507: Wippe ausfahren (Kunststoff / Metall m. Bohrung) ---
-    507: 
+
+    // --- Schritt 507: Wippe ausfahren (Kunststoff / Metall o. Bohrung) ---
+    507:
       IF Schritt_POS_FL THEN TIMER_S507(IN := FALSE); END_IF;
-      sig_MB32 := TRUE; 
-      
+      sig_MB32 := TRUE;
+
+      // Transition: Warten auf Sensor -BG32 (ausgefahren) oder Zeitablauf
       TIMER_S507(IN := "-BG32", PT := T#2s);
       IF TIMER_S507.Q THEN
-        Schritt := 508; 
+        Schritt := 508; // Direkt zu Wippe einfahren
       END_IF;
-        
-    // --- Schritt 517: Magnet-Zylinder ausfahren (Metall-Ast) ---
-    517: 
-      IF Schritt_POS_FL THEN TIMER_S507a(IN := FALSE); END_IF;
-      sig_MB42 := TRUE; 
-      
-      TIMER_S507a(IN := "-BG42", PT := T#2s);
-      IF TIMER_S507a.Q THEN
-        Schritt := 527; 
-      END_IF;
-        
-    // --- Schritt 527: Magnet-Zylinder einfahren (Metall-Ast) ---
-    527: 
-      IF Schritt_POS_FL THEN TIMER_S507b(IN := FALSE); END_IF;
-      sig_MB41 := TRUE; 
 
-      TIMER_S507b(IN := "-BG41", PT := T#2s);
-      IF TIMER_S507b.Q THEN
-        Schritt := 537; 
+    // --- Schritt 507a: Warten auf Entnahme (Metall m. Bohrung) --- NEU nach Umruestung
+    507a:
+      // In diesem Schritt wird auf die Betätigung von Taster -SJ12 gewartet
+      IF Schritt_POS_FL THEN TIMER_S507c(IN := FALSE); END_IF; // Timer zurücksetzen
+
+      // Transition: Positive Flanke von Taster -SJ12
+      IF SJ12_POS_FL THEN
+         Schritt := 509; // Direkt zur Rechtsfahrt
       END_IF;
-        
-    // --- Schritt 537: Magnet deaktivieren & Wippe ausfahren (Metall-Ast) ---
-    537: 
-      IF Schritt_POS_FL THEN TIMER_S507c(IN := FALSE); END_IF;
-      sig_QA61 := TRUE; 
-      sig_MB32 := TRUE; 
-      
-      TIMER_S507c(IN := "-BG32", PT := T#2s);
+
+      // Timeout-Funktion (optional, falls Entnahme zu lange dauert)
+      TIMER_S507c(IN := (Schritt = 507a), PT := T#30s); // Z.B. 30s Timeout
       IF TIMER_S507c.Q THEN
-        Schritt := 508; 
+         Schritt := 500; // Beispiel: Zurück zu Init
       END_IF;
-        
-    // --- Schritt 508: Wippe einfahren (Sammelschritt) ---
-    508: 
+
+    // --- Schritt 517: Zylinder MM40 ausfahren --- -obsolet nach Umruestung
+    // 517:
+    //   IF Schritt_POS_FL THEN TIMER_S507a(IN := FALSE); END_IF;
+    //   sig_MB42 := TRUE;
+    //
+    //   TIMER_S507a(IN := "-BG42", PT := T#2s);
+    //   IF TIMER_S507a.Q THEN
+    //     Schritt := 527;
+    //   END_IF;
+    //
+    // --- Schritt 527: Magnet-Schuetz QA61 einschalten --- -obsolet nach Umruestung
+    // 527:
+    //   sig_QA61 := TRUE; // Magnet EIN
+    //   Schritt := 537;
+    //
+    // --- Schritt 537: Zylinder MM40 einfahren --- -obsolet nach Umruestung
+    // 537:
+    //   IF Schritt_POS_FL THEN TIMER_S507b(IN := FALSE); END_IF;
+    //   sig_MB41 := TRUE;
+    //
+    //   TIMER_S507b(IN := "-BG41", PT := T#2s);
+    //   IF TIMER_S507b.Q THEN
+    //     Schritt := 508;
+    //   END_IF;
+
+    // --- Schritt 508: Wippe einfahren (Sammelschritt nach Abwurf) ---
+    508:
       IF Schritt_POS_FL THEN TIMER_S508(IN := FALSE); END_IF;
-      sig_MB31 := TRUE; 
-      sig_QA61 := FALSE;
+      sig_MB31 := TRUE;
+      // sig_QA61 := FALSE; // Magnet AUS -obsolet nach Umruestung
+
+      // Transition: Warten auf Sensor -BG31 (eingefahren) oder Zeitablauf
       TIMER_S508(IN := "-BG31", PT := T#1s);
       IF TIMER_S508.Q THEN
-        Schritt := 509; 
+        Schritt := 509;
       END_IF;
-        
+
     // --- Schritt 509: Tisch Rechtsfahrt (Referenzfahrt) ---
-    509: 
-      sig_QA6 := TRUE; 
-      
-      IF "-BG13" THEN 
+    509:
+      sig_QA6 := TRUE;
+
+      // Transition: Warten auf Referenzposition -BG13
+      IF "-BG13" THEN
+        sig_QA6 := FALSE; // Anhalten bei Erreichen der Grundstellung
         Schritt := 510;
       END_IF;
 
     // --- Schritt 510: End-Warteschritt / Zyklus-Pruefung ---
-    510: 
-      // Pruefung 1: "Magazin leer"?
+    510:
+      // Transition 1: Magazin leer? (-BG21 muss eingefahren sein)
       IF ("-BG21" AND NOT "-BG51" AND "-BG52") THEN
-        Schritt := 500; 
-      
-      // Pruefung 2: "Teil vorhanden"?
+        Schritt := 500;
+      // Transition 2: Teil vorhanden? (-BG21 muss eingefahren sein)
       ELSIF ("-BG21" AND ("-BG51" OR NOT "-BG52")) THEN
-        Schritt := 501; 
+        Schritt := 501;
       END_IF;
-        
+
   ELSE
     // --- 4. Default-Zweig (Fehlerfall) ---
     Schritt := 500;
-    
+
   END_CASE; // Ende der Schrittkette
 
 END_FUNCTION_BLOCK

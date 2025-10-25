@@ -1,52 +1,51 @@
 (* ====================================================================== *)
-(* FB600: AKTIONEN *)
-(* Sicherheitslogik und Zuweisung der internen Signale auf Hardware *)
+(* FB600: AKTIONEN                                                        *)
+(* Sicherheitslogik und Zuweisung der internen Signale auf Hardware       *)
 (* ====================================================================== *)
 FUNCTION_BLOCK FB600
 
 BEGIN
-  
+
   // Gegenseitige Verriegelung: Verhindere gleichzeitig Linksfahrt + Rechtsfahrt
   IF sig_QA5 AND sig_QA6 THEN
     sig_QA5 := FALSE;
     sig_QA6 := FALSE;
   END_IF;
-  
+
   // Gegenseitige Verriegelung: Verhindere gleichzeitig Einfahren + Ausfahren MM20
   IF sig_MB21 AND sig_MB22 THEN
-    sig_MB22 := FALSE;
+    sig_MB22 := FALSE; // Priorität Einfahren
   END_IF;
-  
+
   // Gegenseitige Verriegelung: Verhindere gleichzeitig Einfahren + Ausfahren MM30
   IF sig_MB31 AND sig_MB32 THEN
-    sig_MB32 := FALSE;
+    sig_MB32 := FALSE; // Priorität Einfahren
   END_IF;
-  
-  // Gegenseitige Verriegelung: Verhindere gleichzeitig Einfahren + Ausfahren MM40
-  IF sig_MB41 AND sig_MB42 THEN
-    sig_MB42 := FALSE;
-  END_IF;
-  
-  // Zuweisung interne Signale ? Hardware-Ausgaenge
-  
-  // Zylinder MM20 Steuersignale -> Magazinzylinder
+
+  // Gegenseitige Verriegelung: MM40 -obsolet nach Umruestung
+  // IF sig_MB41 AND sig_MB42 THEN
+  //   sig_MB42 := FALSE; // Priorität Einfahren
+  // END_IF;
+
+  // Zuweisung interne Signale -> Hardware-Ausgaenge
+
+  // Zylinder MM20 // Magazinzylinder
   "-MB21" := sig_MB21;
   "-MB22" := sig_MB22;
-  
-  // Zylinder MM30 Steuersignale -> Wippenzylinder
+
+  // Zylinder MM30 // Wippe 
   "-MB31" := sig_MB31;
   "-MB32" := sig_MB32;
-  
-  // Zylinder MM40 Steuersignale -> Magnetzylinder
-  "-MB41" := sig_MB41;
-  "-MB42" := sig_MB42;
-  
-  // X-Achsen Steuersignale -> Schlittenmotor
+
+  // Zylinder MM40 -obsolet nach Umruestung
+  // "-MB41" := sig_MB41;
+  // "-MB42" := sig_MB42;
+
+  // X-Achsen
   "-QA5" := sig_QA5; // Linksfahrt
   "-QA6" := sig_QA6; // Rechtsfahrt
-  
-  // Magnet-Schuetz -> Magnet wird beim anziehen das Schuetzes deaktiviert.
-  "-QA61" := sig_QA61;
-  
-END_FUNCTION_BLOCK
 
+  // Magnet-Schuetz -obsolet nach Umruestung
+  // "-QA61" := sig_QA61;
+
+END_FUNCTION_BLOCK

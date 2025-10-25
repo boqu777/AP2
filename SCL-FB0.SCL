@@ -1,53 +1,38 @@
-
 (* ====================================================================== *)
 (* FB0: BETRIEBSARTENWAHL                                                 *)
-(*                                                                        *)
-(* Ermittelt die aktive Betriebsart (Automatik/Einrichten).               *)
-(* Wertet dafuer die zentralen Freigaben (Not-Aus, Druck, Steuerung EIN)  *)
-(* und den Wahlschalter -SJ4 aus.                                         *)
 (* ====================================================================== *)
 
 FUNCTION_BLOCK FB0 // Betriebsartenwahl
 
 VAR_OUTPUT
-  Einrichtbetrieb : BOOL := FALSE; // Ausgang: TRUE, wenn Einrichtbetrieb aktiv ist
+  Einrichtbetrieb  : BOOL := FALSE; // Ausgang: TRUE, wenn Einrichtbetrieb aktiv ist
   Automatikbetrieb : BOOL := FALSE; // Ausgang: TRUE, wenn Automatikbetrieb aktiv ist
 END_VAR
 
 BEGIN
 
   // --- 1. Grundstellung ---
-  // Zu Beginn jedes Zyklus werden beide Betriebsarten zurueckgesetzt.
-  // Es kann immer nur eine Betriebsart aktiv sein.
-  Einrichtbetrieb := FALSE; 
+  Einrichtbetrieb  := FALSE;
   Automatikbetrieb := FALSE;
-  
+
   // --- 2. Pruefung der Freigabebedingungen ---
-  // Es werden die zentralen Freigaben (Sicherheitskette, Versorgung etc.) geprueft.
-  // Nur wenn ALLE Bedingungen erfuellt sind, darf eine Betriebsart angewaehlt werden.
-  //
   // KE2: NOT-AUS quittiert / o.K.
   // BP1: Betriebsdruck o.K.
   // SJ3: Steuerung EIN
-  // FC7: Motorschutzschalter o.K.
-  IF ("-KE2" AND "-BP1" AND "-SJ3" AND "-FC7")THEN 
-  
+  // Motorschutz -FC7 entfernt
+  IF ("-KE2" AND "-BP1" AND "-SJ3") THEN // AND "-FC7" -obsolet nach Umruestung
+
     // --- 3. Abfrage des Betriebsarten-Wahlschalters ---
-    // Die Eingaenge (hier SJ4) werden ausgewertet, um die gewaehlte Art zu bestimmen.
-    
     // SJ4 ist der Wahlschalter "Einricht-/Automatikbetrieb".
-    // Wenn SJ4 NICHT beteatigt ist (FALSE), soll Einrichtbetrieb aktiv sein.
+    // Wenn SJ4 NICHT betätigt ist (FALSE), soll Einrichtbetrieb aktiv sein.
     IF NOT "-SJ4" THEN
       Einrichtbetrieb := TRUE; // Einrichtbetrieb setzen
-      
-    // Wenn SJ4 betaetigt ist (TRUE), soll Automatikbetrieb aktiv sein.
+
+    // Wenn SJ4 betätigt ist (TRUE), soll Automatikbetrieb aktiv sein.
     ELSE
       Automatikbetrieb := TRUE; // Automatikbetrieb setzen
     END_IF;
-    
+
   END_IF; // Ende der IF-Abfrage fuer Freigabebedingungen
-  
-  // Wenn die Freigabebedingungen (KE2, BP1, etc.) nicht erfuellt sind,
-  // bleiben beide Ausgaenge FALSE (siehe Grundstellung oben).
-  
+
 END_FUNCTION_BLOCK
