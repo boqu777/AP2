@@ -21,13 +21,13 @@ BEGIN // Start der FB300-Logik
 
     // -- Steuerung X-Achse (SR-Logik mit Vorrang Reset) --
     IF ("-SJ6" AND NOT "-SJ7" AND NOT "-BG11" AND NOT sig_QA6) THEN
-      sig_QA5 := TRUE;
+      sig_QA5 := TRUE; // Linksfahrt
     ELSIF "-BG11" OR ("-SJ7" AND NOT "-SJ6") THEN
       sig_QA5 := FALSE;
     END_IF;
 
     IF ("-SJ7" AND NOT "-SJ6" AND NOT "-BG13" AND NOT sig_QA5) THEN
-      sig_QA6 := TRUE;
+      sig_QA6 := TRUE; // Rechtsfahrt
     ELSIF "-BG13" OR ("-SJ6" AND NOT "-SJ7") THEN
       sig_QA6 := FALSE;
     END_IF;
@@ -46,7 +46,7 @@ BEGIN // Start der FB300-Logik
     END_IF;
 
     // -- Steuerung Zylinder MM30 (Wippe) (Selbsthaltung) --
-    IF (NOT "-SJ10") THEN // Taster nach unten -> Einfahren
+    IF (NOT "-SJ10") THEN // -> Einfahren
       sig_MB31 := TRUE;
     ELSIF "-BG31" THEN // Endlage erreicht -> Ruecksetzen
       sig_MB31 := FALSE;

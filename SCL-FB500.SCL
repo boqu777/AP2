@@ -147,20 +147,20 @@ BEGIN
     506:
       IF Teil_Kunststoff THEN // Fall 1: Kunststoff (C2=Pos1) -> Wippe
         Schritt := 507;
-      ELSIF Teil_Metall THEN // Fall 2: Metall ohne Bohrung (C2=Pos3) -> Wippe
-        Schritt := 507; // Geaendert von 517 (Magnet-Ast entfaellt) - nach Umruestung
+      ELSIF Teil_Metall THEN // Fall 2: Metall ohne Bohrung (C2=Pos3) -> Tisch
+        Schritt := 509; // Geaendert von 517 (Magnet-Ast entfaellt) - nach Umruestung
       ELSIF (C2 = DB1.Pos2) THEN // Fall 3: Metall mit Bohrung (C2=Pos2) -> Warten
         Schritt := 507a; // Neuer Schritt zum Warten - nach Umruestung
       ELSE // Sicherheitsfall -> zurück zur Grundstellung
-        Schritt := 509;
+        Schritt := 500;
       END_IF;
 
-    // --- Schritt 507: Wippe ausfahren (Kunststoff / Metall o. Bohrung) ---
+    // --- Schritt 507: Wippe ausfahren (Kunststoff) ---
     507:
       IF Schritt_POS_FL THEN TIMER_S507(IN := FALSE); END_IF;
       sig_MB32 := TRUE;
 
-      // Transition: Warten auf Sensor -BG32 (ausgefahren) oder Zeitablauf
+      // Transition: Warten auf Sensor -BG32 (ausgefahren) und Zeitablauf
       TIMER_S507(IN := "-BG32", PT := T#2s);
       IF TIMER_S507.Q THEN
         Schritt := 508; // Direkt zu Wippe einfahren
@@ -177,10 +177,10 @@ BEGIN
       END_IF;
 
       // Timeout-Funktion (optional, falls Entnahme zu lange dauert)
-      TIMER_S507c(IN := (Schritt = 507a), PT := T#30s); // Z.B. 30s Timeout
-      IF TIMER_S507c.Q THEN
-         Schritt := 500; // Beispiel: Zurück zu Init
-      END_IF;
+      //TIMER_S507c(IN := (Schritt = 507a), PT := T#30s); // Z.B. 30s Timeout
+      //IF TIMER_S507c.Q THEN
+      //   Schritt := 500; // Beispiel: Zurück zu Init
+      //END_IF;
 
     // --- Schritt 517: Zylinder MM40 ausfahren --- -obsolet nach Umruestung
     // 517:
