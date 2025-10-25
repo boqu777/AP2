@@ -167,7 +167,7 @@ BEGIN
       END_IF;
 
     // --- Schritt 507a: Warten auf Entnahme (Metall m. Bohrung) --- NEU nach Umruestung
-    507a:
+    5071:
       // In diesem Schritt wird auf die Betätigung von Taster -SJ12 gewartet
       IF Schritt_POS_FL THEN TIMER_S507c(IN := FALSE); END_IF; // Timer zurücksetzen
 
