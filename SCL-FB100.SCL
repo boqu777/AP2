@@ -4,6 +4,9 @@
 (* Erzeugt ein globales 1Hz Taktsignal (500ms AN / 500ms AUS).            *)
 (* Wird fuer alle Blinkfunktionen der Meldeleuchten (in FB200) benoetigt. *)
 (* ====================================================================== *)
+(* Autor: Boris Quade                                                     *)
+(* Datum: 27.06.2024                                                      *)
+(* ====================================================================== *)
 FUNCTION_BLOCK FB100
 
 VAR_OUTPUT

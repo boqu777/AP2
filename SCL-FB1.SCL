@@ -6,6 +6,10 @@
 (* aktiven Fahrtrichtung (sig_QA5 = Linksfahrt / sig_QA6 = Rechtsfahrt).  *)
 (* Setzt den Zaehler bei Erreichen des Referenzschalters -BG13 auf 0.     *)
 (* ====================================================================== *)
+(* Autor: Boris Quade                                                     *)
+(* Datum: 27.06.2024                                                      *)
+(* ====================================================================== *)
+
 FUNCTION_BLOCK FB1 // FB_Positionierung (Globaler Zaehler)
 
 VAR // Interner Speicher des FBs

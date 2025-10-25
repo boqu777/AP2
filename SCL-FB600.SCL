@@ -2,6 +2,9 @@
 (* FB600: AKTIONEN                                                        *)
 (* Sicherheitslogik und Zuweisung der internen Signale auf Hardware       *)
 (* ====================================================================== *)
+(* Autor: Boris Quade                                                     *)
+(* Datum: 27.06.2024                                                      *)
+(* ====================================================================== *)
 FUNCTION_BLOCK FB600
 
 BEGIN
