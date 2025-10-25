@@ -24,13 +24,12 @@ VAR // Statische Variablen
 END_VAR
 
 VAR_TEMP
-  // Temporäre Variable für Flankenerkennung SJ12 - neu nach Umruestung
+  // Temporaere Variable fuer Flankenerkennung SJ12 - neu nach Umruestung
   SJ12_ALT : BOOL := FALSE;
   SJ12_POS_FL : BOOL;
 END_VAR
 
 BEGIN
-
   // --- 0. SCHUTZBEDINGUNG (Guard Clause) ---
   IF NOT Automatikbetrieb THEN
     Schritt := 500;
@@ -40,7 +39,7 @@ BEGIN
     // TIMER_S507a(IN := FALSE); -obsolet nach Umruestung
     // TIMER_S507b(IN := FALSE); -obsolet nach Umruestung
     TIMER_S507c(IN := FALSE);
-    SJ12_ALT := FALSE; // Rücksetzen bei Verlassen des Automatikbetriebs - neu nach Umruestung
+    SJ12_ALT := FALSE; // Ruecksetzen bei Verlassen des Automatikbetriebs - neu nach Umruestung
     RETURN;
   END_IF; // --- AB HIER: Code wird nur ausgeführt, wenn Automatikbetrieb = TRUE ---
 
@@ -111,7 +110,7 @@ BEGIN
       END_IF;
       Schritt := 503;
 
-    // --- Schritt 503: Schlitten fährt zur Soll-Position ---
+    // --- Schritt 503: Schlitten faehrt zur Soll-Position ---
     503:
       sig_QA5 := TRUE; // Tisch Linksfahrt aktivieren
 
@@ -169,7 +168,7 @@ BEGIN
     // --- Schritt 507a: Warten auf Entnahme (Metall m. Bohrung) --- NEU nach Umruestung
     5071:
       // In diesem Schritt wird auf die Betätigung von Taster -SJ12 gewartet
-      IF Schritt_POS_FL THEN TIMER_S507c(IN := FALSE); END_IF; // Timer zurücksetzen
+      IF Schritt_POS_FL THEN TIMER_S507c(IN := FALSE); END_IF; // Timer zuruecksetzen
 
       // Transition: Positive Flanke von Taster -SJ12
       IF SJ12_POS_FL THEN
