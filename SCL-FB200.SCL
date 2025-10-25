@@ -1,42 +1,40 @@
 (* ====================================================================== *)
-(* FB200: ANZEIGE *)
-(* Steuert alle Meldeleuchten basierend auf Anlagenzustand *)
+(* FB200: ANZEIGE                                                         *)
+(* Steuert alle Meldeleuchten basierend auf Anlagenzustand                 *)
 (* ====================================================================== *)
 FUNCTION_BLOCK FB200
 
 VAR_INPUT
   Einrichtbetrieb   : BOOL; // Einrichtbetrieb aktiv
   Automatikbetrieb  : BOOL; // Automatikbetrieb aktiv
-  Takt_1Hz         : BOOL; // 1Hz Taktsignal fuer Blinken
-  Position       : INT; // Positionszaehler aus FB1
+  Takt_1Hz          : BOOL; // 1Hz Taktsignal fuer Blinken
+  Position          : INT;  // Positionszaehler aus FB1
 END_VAR
 
 BEGIN
-  
+
   // Fehlerbehandlung: Bei NOT-AUS oder Steuerung AUS --> alle Leuchten aus
   IF NOT "-KE2" OR NOT "-SJ3" THEN
-    "-PF2" := FALSE;
-    "-PF3" := FALSE;
-    "-PF4" := FALSE;
-    "-PF5" := FALSE;
-    "-PF6" := FALSE;
-    "-PF7" := FALSE;
-    "-PF8" := FALSE;
+    "-PF2"  := FALSE;
+    "-PF3"  := FALSE;
+    "-PF4"  := FALSE;
+    // "-PF5"  := FALSE; -obsolet nach Umruestung
+    "-PF6"  := FALSE;
+    "-PF7"  := FALSE;
+    "-PF8"  := FALSE;
     "-PF10" := FALSE;
     "-PF11" := FALSE;
     "-PF12" := FALSE;
-    "-PF14" := FALSE;
+    // "-PF14" := FALSE; -obsolet nach Umruestung
     "-PF32" := FALSE;
-    "-PF33" := FALSE;
+    // "-PF33" := FALSE; -obsolet nach Umruestung
     RETURN;
   END_IF;
-  
+
   // PF2: Grundstellung-Anzeige
-  // AKTION: Meldeleuchte AN wenn Achse rechts, alle Zylinder eingefahren, Magnet aktiv
-  "-PF2" := ("-BG13" AND "-BG21" AND "-BG31" AND "-BG41" AND NOT "-QA61");
-  
+  "-PF2" := ("-BG13" AND "-BG21" AND "-BG31"); // AND "-BG41" AND NOT "-QA61" -obsolet nach Umruestung
+
   // PF3: Betriebsart-Anzeige
-  // AKTION: Einrichtbetrieb = dauernd AN, Automatikbetrieb = 1Hz blinken
   IF Einrichtbetrieb THEN
     "-PF3" := TRUE;
   ELSIF Automatikbetrieb THEN
@@ -44,48 +42,39 @@ BEGIN
   ELSE
     "-PF3" := FALSE;
   END_IF;
-  
+
   // PF4: Betriebsdruck vorhanden
-  // AKTION: Meldeleuchte spiegelt Druckzustand
   "-PF4" := "-BP1";
-  
+
   // PF5: Motorschutz ausgeloest
-  // AKTION: Meldeleleuchte AN wenn Motorschutz NICHT in Ordnung
-  "-PF5" := NOT "-FC7";
-  
+  // "-PF5" := (NOT "-FC7" AND Takt_1Hz); -obsolet nach Umruestung
+
   // PF6: Linksfahrt blinkend
-  // AKTION: Meldeleuchte blinkt weahrend X-Achse nach links faehrt
   "-PF6" := ("-QA5" AND Takt_1Hz);
-  
+
   // PF7: Rechtsfahrt blinkend
-  // AKTION: Meldeleuchte blinkt weahrend X-Achse nach rechts faehrt
   "-PF7" := ("-QA6" AND Takt_1Hz);
-  
+
   // PF8: Position erreicht
-  // AKTION: Meldeleuchte AN wenn Position 1, 2, 3 oder 4 erreicht
-  "-PF8" := (Position = DB1.Pos1) OR (Position = DB1.Pos2) OR (Position = DB1.Pos3) OR (Position = DB1.Pos4);
-  
+  // Pos4 entfernt, da Reserve
+  "-PF8" := (Position = DB1.Pos1) OR (Position = DB1.Pos2) OR (Position = DB1.Pos3);
+
   // PF10: Zylinder MM20 eingefahren
-  // AKTION: Meldeleuchte spiegelt Zustand Sensor -BG21
   "-PF10" := "-BG21";
-  
+
   // PF11: Zylinder MM20 ausgefahren
-  // AKTION: Meldeleuchte spiegelt Zustand Sensor -BG22
   "-PF11" := "-BG22";
-  
+
   // PF12: Zylinder MM30 eingefahren
-  // AKTION: Meldeleuchte spiegelt Zustand Sensor -BG31
   "-PF12" := "-BG31";
-  
+
   // PF14: Zylinder MM40 eingefahren
-  // AKTION: Meldeleuchte spiegelt Zustand Sensor -BG41
-  "-PF14" := "-BG41";
-  
+  // "-PF14" := "-BG41"; -obsolet nach Umruestung
+
   // PF32: Magazin leer
-  // AKTION: Meldeleuchte AN wenn keine Materialerkennung
   "-PF32" := (NOT "-BG51" AND "-BG52");
-  
+
   // PF33: Magnet deaktiviert
-  // AKTION: Meldeleuchte AN wenn Magnet-Schuetz AUS
-  "-PF33" := NOT "-QA61";
+  // "-PF33" := (NOT "-QA61"); -obsolet nach Umruestung
+
 END_FUNCTION_BLOCK
