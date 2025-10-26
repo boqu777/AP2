@@ -137,7 +137,7 @@ BEGIN
       IF Schritt_POS_FL THEN TIMER_S504(IN := FALSE); END_IF;
       sig_MB22 := TRUE; 
       
-      TIMER_S504(IN := Schritt = 504, PT := T#1s); 
+      TIMER_S504(IN := "-BG22", PT := T#1s); 
       IF TIMER_S504.Q THEN
         Schritt := 505;
       END_IF;
