@@ -1,86 +1,82 @@
-ORGANIZATION_BLOCK "Zyklus" // OB 1
-//TITLE = "Hauptprogramm"
-// 
+ORGANIZATION_BLOCK "Zyklus"
+TITLE =Zyklus
 // Autor: Boris Quade
-// Version: 1.0
 // Datum: 23.10.2025
 // 
 // Dieser OB1 ruft alle notwendigen FBs
 // fuer die Sortieranlage auf.
-// 
+VERSION : 0.0
 
 
+VAR_TEMP
+  OB1_Reserve_Bytes : ARRAY  [1 .. 20 ] OF BYTE ;	// 20 Bytes Dummy-Daten
+END_VAR
 BEGIN
-
+NETWORK
+TITLE = "1. Betriebsartenwahl (FB0) aufrufen"
 // --- Netzwerk 1: Betriebsartenwahl ---
 // Ruft FB0 auf, um zu bestimmen, ob Einricht- oder
 // Automatikbetrieb angewaehlt ist.
 // Die Ergebnisse werden in globale Merker geschrieben.
+      CALL "FB0 Betriebsartenwahl" , "IDB_FB0" (
+           Einrichtbetrieb          := "Einrichtbetrieb",// M 1.1
+           Automatikbetrieb         := "Automatikbetrieb");// M 1.2
+
+
 NETWORK
-  TITLE = "1. Betriebsartenwahl (FB0) aufrufen"
+TITLE = "2. Taktgeber (FB100) aufrufen"
+//// --- Netzwerk 2: Taktgeber ---
+//// Ruft FB100 auf, um einen 1Hz-Takt fuer
+//// die Blinkleuchten zu erzeugen.
+      CALL "FB100 Taktgeber" , "IDB_FB100" (
+           Takt_1Hz                 := "g_bTakt_1Hz");// Takt an M10.0 uebergeben
 
-    CALL "FB0 Betriebsartenwahl" , DB10 // Instanz-DB 
-       (Einrichtbetrieb  := "Einrichtbetrieb",      // M 1.1
-        Automatikbetrieb := "Automatikbetrieb");   // M 1.2
-
-// --- Netzwerk 2: Taktgeber ---
-// Ruft FB100 auf, um einen 1Hz-Takt fuer
-// die Blinkleuchten zu erzeugen.
 NETWORK
-  TITLE = "2. Taktgeber (FB100) aufrufen"
+TITLE = "3. Positionserfassung (FB1) aufrufen"
+//// --- Netzwerk 3: Positionserfassung ---
+//// Ruft FB1 auf. Dieser Baustein liest den Inkrementalgeber
+//// (-BG12) und die Fahrtrichtungen (sig_QA5/sig_QA6)
+//// und schreibt direkt auf die globale Variable "Position" (MW8).
+      CALL "FB1 Positionserfassung" , "IDB_FB1" ;// Instanz-DB 
 
-    // Annahme: M 10.0 wird als globaler Taktmerker verwendet.
-    CALL "FB100 Taktgeber" , DB100 // Instanz-DB 
-       (Takt_1Hz         := M 10.0);       // Takt an M10.0 uebergeben
-
-// --- Netzwerk 3: Positionserfassung ---
-// Ruft FB1 auf. Dieser Baustein liest den Inkrementalgeber
-// (-BG12) und die Fahrtrichtungen (sig_QA5/sig_QA6)
-// und schreibt direkt auf die globale Variable "Position" (MW8).
 NETWORK
-  TITLE = "3. Positionserfassung (FB1) aufrufen"
+TITLE = "4. Einrichtbetrieb (FB300) aufrufen"
+//// --- Netzwerk 4: Einrichtbetrieb (Hand) ---
+//// Ruft FB300 fuer den Handbetrieb auf.
+//// Der Baustein ist nur aktiv, wenn "Einrichtbetrieb" (M1.1) TRUE ist.
+      CALL "FB300 Einrichtbetrieb" , "IDB_FB300" (
+           Einrichtbetrieb          := "Einrichtbetrieb");// M 1.1
 
-    CALL "FB1 Positionserfassung" , DB11; // Instanz-DB 
 
-// --- Netzwerk 4: Einrichtbetrieb (Hand) ---
-// Ruft FB300 fuer den Handbetrieb auf.
-// Der Baustein ist nur aktiv, wenn "Einrichtbetrieb" (M1.1) TRUE ist.
 NETWORK
-  TITLE = "4. Einrichtbetrieb (FB300) aufrufen"
+TITLE = "5. Automatikbetrieb (FB500) aufrufen"
+//// --- Netzwerk 5: Automatikbetrieb (Ablauf) ---
+//// Ruft FB500 fuer den Automatik-Ablauf auf.
+//// Der Baustein ist nur aktiv, wenn "Automatikbetrieb" (M1.2) TRUE ist.
+      CALL "FB500 Automatikbetrieb" , "IDB_FB500" (
+           Automatikbetrieb         := "Automatikbetrieb");
 
-    CALL "FB300 Einrichtbetrieb" , DB300 // Instanz-DB 
-       (Einrichtbetrieb  := "Einrichtbetrieb");  // M 1.1
-
-// --- Netzwerk 5: Automatikbetrieb (Ablauf) ---
-// Ruft FB500 fuer den Automatik-Ablauf auf.
-// Der Baustein ist nur aktiv, wenn "Automatikbetrieb" (M1.2) TRUE ist.
 NETWORK
-  TITLE = "5. Automatikbetrieb (FB500) aufrufen"
+TITLE = "6.FB200 Anzeige (FB200) aufrufen"
+//// --- Netzwerk 6: Anzeige (Meldeleuchten) ---
+//// Ruft FB200 auf, um alle Meldeleuchten
+//// basierend auf den aktuellen Zustaenden zu steuern
+      CALL "FB200 Anzeige" , "IDB_FB200" (
+           Einrichtbetrieb          := "Einrichtbetrieb",// M 1.1
+           Automatikbetrieb         := "Automatikbetrieb",// M 1.2
+           Takt_1Hz                 := "g_bTakt_1Hz",// Takt von NW2
+           Position                 := "Position");// MW 8
 
-    CALL "FB500 Automatikbetrieb" , DB500 // Instanz-DB 
-       (Automatikbetrieb := "Automatikbetrieb"); // M 1.2
 
-// --- Netzwerk 6: Anzeige (Meldeleuchten) ---
-// Ruft FB200 auf, um alle Meldeleuchten
-// basierend auf den aktuellen Zustaenden zu steuern.
 NETWORK
-  TITLE = "6.FB200 Anzeige (FB200) aufrufen"
-
-    CALL "FB200 Anzeige" , DB200 // Instanz-DB 
-       (Einrichtbetrieb  := "Einrichtbetrieb",    // M 1.1
-        Automatikbetrieb := "Automatikbetrieb",   // M 1.2
-        Takt_1Hz         := M 10.0,               // Takt von NW2
-        Position         := "Position");          // MW 8
-
-// --- Netzwerk 7: Aktionen und Ausgaenge ---
-// Ruft FB600 auf. Dieser Baustein enthaelt
-// die gegenseitigen Verriegelungen (z.B. QA5/QA6)
-// und weist die internen Signale (sig_...)
-// den Hardware-Ausgaengen (QA..., MB...) zu.
-NETWORK
-  TITLE = "7. Aktionen / Ausgaenge (FB600) aufrufen"
-
-    CALL "FB600 Aktionen" , DB600; // Instanz-DB 
+TITLE = "7. Aktionen / Ausgaenge (FB600) aufrufen"
+//// --- Netzwerk 7: Aktionen und Ausgaenge ---
+//// Ruft FB600 auf. Dieser Baustein enthaelt
+//// die gegenseitigen Verriegelungen (z.B. QA5/QA6)
+//// und weist die internen Signale (sig_...)
+//// den Hardware-Ausgaengen (QA..., MB...) zu.
+      CALL "FB600 Aktionen" , "IDB_FB600" ;// Instanz-DB 
 
 
 END_ORGANIZATION_BLOCK
+
