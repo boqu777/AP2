@@ -78,11 +78,11 @@ BEGIN
     // --- Schritt 501: Teileerkennung ---
     501: 
       // Transition: Alternative Verzweigung (Teile pruefen)
-      IF ("-BG51" AND "-BG52") THEN           // "Metall mit Bohrung"
+      IF ("-BG51" AND "-BG52") THEN            // "Metall mit Bohrung"
         Schritt := 502; 
       ELSIF (NOT "-BG51" AND NOT "-BG52") THEN // "Kunststoff"
         Schritt := 512; 
-      ELSIF ("-BG51" AND NOT "-BG52") THEN // "Metall ohne Bohrung"
+      ELSIF ("-BG51" AND NOT "-BG52") THEN     // "Metall ohne Bohrung"
         Schritt := 522; 
       END_IF;
        
