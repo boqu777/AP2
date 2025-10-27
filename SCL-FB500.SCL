@@ -57,7 +57,24 @@ BEGIN
   sig_MB42 := FALSE; 
   sig_QA61 := FALSE; 
   sig_QA6  := FALSE; 
- 
+  
+  // --- b. NEU: INITIALISIERUNG / GRUNDSTELLUNG ANFAHREN ---
+  // Solange die Schrittkette in Schritt 500 (Warten auf Start) ist,
+  // werden alle Zylinder/Achsen aktiv in ihre Grundstellung gefahren.
+  IF Schritt = 500 THEN
+    IF NOT "-BG21" THEN // Magazin nicht eingefahren
+      sig_MB21 := TRUE;
+    END_IF;
+    IF NOT "-BG31" THEN // Wippe nicht eingefahren
+      sig_MB31 := TRUE;
+    END_IF;
+    IF NOT "-BG41" THEN // Magnet-Zylinder nicht eingefahren
+      sig_MB41 := TRUE;
+    END_IF;
+    IF NOT "-BG13" THEN // Tisch nicht rechts (Grundstellung)
+      sig_QA6 := TRUE;  // Fahre Tisch nach rechts
+    END_IF;
+  END_IF;
   // --- 3. Schrittkette (Ablaufsteuerung) ---
   CASE Schritt OF
    
