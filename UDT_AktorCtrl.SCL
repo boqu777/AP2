@@ -1,0 +1,15 @@
+TYPE UDT1
+TITLE = 'Aktor-Steuersignale'
+
+  STRUCT
+    MB21_Ein      : BOOL; // Befehl: MM20 einfahren
+    MB22_Aus      : BOOL; // Befehl: MM20 ausfahren
+    MB31_Ein      : BOOL; // Befehl: MM30 einfahren
+    MB32_Aus      : BOOL; // Befehl: MM30 ausfahren
+    MB41_Ein      : BOOL; // Befehl: MM40 einfahren
+    MB42_Aus      : BOOL; // Befehl: MM40 ausfahren
+    QA5_Links     : BOOL; // Befehl: X-Achse Linksfahrt
+    QA6_Rechts    : BOOL; // Befehl: X-Achse Rechtsfahrt
+    QA61_Magnet   : BOOL; // Befehl: Schuetz Magnet
+  END_STRUCT
+END_TYPE

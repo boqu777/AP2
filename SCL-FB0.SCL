@@ -9,32 +9,19 @@
 
 FUNCTION_BLOCK FB0 // Betriebsartenwahl
 
-VAR_OUTPUT
-  Einrichtbetrieb : BOOL := FALSE; // Ausgang: TRUE, wenn Einrichtbetrieb aktiv ist
-  Automatikbetrieb : BOOL := FALSE; // Ausgang: TRUE, wenn Automatikbetrieb aktiv ist
-END_VAR
-
 BEGIN
 
-  // --- 1. Grundstellung ---
+  (* ======================= 1. Grundstellung --- ========================*)
   // Zu Beginn jedes Zyklus werden beide Betriebsarten zurueckgesetzt.
   // Es kann immer nur eine Betriebsart aktiv sein.
-  Einrichtbetrieb := FALSE; 
-  Automatikbetrieb := FALSE;
+  "dbGlobal".Betriebsart.Einrichten := FALSE; 
+  "dbGlobal".Betriebsart.Automatik := FALSE;
  
-    sig_MB22 := FALSE; 
-    sig_MB21 := FALSE; 
-    sig_MB31 := FALSE; 
-    sig_MB32 := FALSE; 
-    sig_MB41 := FALSE; 
-    sig_MB42 := FALSE; 
-    sig_QA5 := FALSE;
-    sig_QA6 := FALSE;
+    
   
-  // --- 2. Pruefung der Freigabebedingungen ---
+  (* =========== 2. Pruefung der Freigabebedingungen ---==================*)
   // Es werden die zentralen Freigaben (Sicherheitskette, Versorgung etc.) geprueft.
   // Nur wenn ALLE Bedingungen erfuellt sind, darf eine Betriebsart angewaehlt werden.
-  //
   // KE2: NOT-AUS quittiert / o.K.
   // BP1: Betriebsdruck o.K.
   // SJ3: Steuerung EIN
@@ -47,11 +34,11 @@ BEGIN
     // SJ4 ist der Wahlschalter "Einricht-/Automatikbetrieb".
     // Wenn SJ4 NICHT beteatigt ist (FALSE), soll Einrichtbetrieb aktiv sein.
     IF NOT "-SJ4" THEN
-      Einrichtbetrieb := TRUE; // Einrichtbetrieb setzen
+      "dbGlobal".Betriebsart.Einrichten := TRUE; // Einrichtbetrieb setzen
       
     // Wenn SJ4 betaetigt ist (TRUE), soll Automatikbetrieb aktiv sein.
     ELSE
-      Automatikbetrieb := TRUE; // Automatikbetrieb setzen
+      "dbGlobal".Betriebsart.Automatik := TRUE; // Automatikbetrieb setzen
     END_IF;
     RETURN;
   END_IF; // Ende der IF-Abfrage fuer Freigabebedingungen

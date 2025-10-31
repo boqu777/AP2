@@ -1,15 +1,37 @@
-DATA_BLOCK "Positionen"
-TITLE = Positionswerte
+DATA_BLOCK DB1
+TITLE = 'dbGlobal'
 VERSION : 0.1
 
 
-  STRUCT 	
-   Pos1 : INT  := 78;	//Ablagepostion Kunststoffteile und  Metallteile ohne Bohrung
-   Pos2 : INT  := 53;	//Ablageposition Metallteile mit Bohrung
-   Pos3 : INT  := 31;	//Reserve Position
-   Pos4 : INT  := 6;	//Reserve Position
-  END_STRUCT ;	
-BEGIN
-   
-END_DATA_BLOCK
+  STRUCT     
+   Pos1 : INT  := 78;    //Ablagepostion Kunststoffteile und  Metallteile ohne Bohrung
+   Pos2 : INT  := 53;    //Ablageposition Metallteile mit Bohrung
+   Pos3 : INT  := 31;    //Reserve Position
+   Pos4 : INT  := 6;    //Reserve Position
 
+    Betriebsart : STRUCT
+      Einrichten    : BOOL; // von FB0
+      Automatik     : BOOL; // von FB0
+    END_STRUCT;
+
+    Takt_1Hz          : BOOL; // von FB100
+    
+    Achse_X : STRUCT
+      IstPosition     : INT;  // von FB1
+      SollPosition    : INT;  // von FB500
+    END_STRUCT;
+    
+    Teilemerker : STRUCT
+      Kunststoff      : BOOL; // von FB500
+      Metall       : BOOL; // von FB500
+    END_STRUCT;
+
+    // --- Steuersignale (alt: Merker) ---
+    // Diese Strukturen nutzen unseren UDT1
+    Steuer_Hand       : UDT1; // Geschrieben von FB300
+    Steuer_Auto       : UDT1; // Geschrieben von FB500
+    Steuer_Final      : UDT1; // Geschrieben von FB600 (verriegelt)
+END_STRUCT
+
+BEGIN
+END_DATA_BLOCK

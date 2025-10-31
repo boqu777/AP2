@@ -1,52 +1,89 @@
 (* ====================================================================== *)
-(* FB600: AKTIONEN *)
-(* Sicherheitslogik und Zuweisung der internen Signale auf Hardware *)
+(* FB600: AKTIONEN                                                        *)
+(* Multiplexer, Sicherheitslogik und Zuweisung auf Hardware-Ausgaenge     *)
+(*                                                                        *)
+(* Verwaltet die Aktorik-Signale basierend auf der aktiven Betriebsart.   *)
+(* Im Einrichtbetrieb (Hand) werden die Signale von FB300 genutzt.        *)
+(* Im Automatikbetrieb (Ablauf) werden die Signale von FB500 genutzt.     *)
+(* Wenn keine Betriebsart aktiv ist, werden alle Signale auf FALSE gesetzt.*)
 (* ====================================================================== *)
 FUNCTION_BLOCK FB600
 
+VAR
+  // Temporaere Struktur, um alle Signale zu nullen
+  NULL_Struktur : UDT1; // Nutzt unseren UDT1
+END_VAR
+
 BEGIN
   
-  // Gegenseitige Verriegelung: Verhindere gleichzeitig Linksfahrt + Rechtsfahrt
-  IF sig_QA5 AND sig_QA6 THEN
-    sig_QA5 := FALSE;
-    sig_QA6 := FALSE;
+  // --- 1. Grundstellung ---
+  // Wir nullen die temporaere Struktur
+  NULL_Struktur.MB21_Ein    := FALSE;
+  NULL_Struktur.MB22_Aus    := FALSE;
+  NULL_Struktur.MB31_Ein    := FALSE;
+  NULL_Struktur.MB32_Aus    := FALSE;
+  NULL_Struktur.MB41_Ein    := FALSE;
+  NULL_Struktur.MB42_Aus    := FALSE;
+  NULL_Struktur.QA5_Links   := FALSE;
+  NULL_Struktur.QA6_Rechts  := FALSE;
+  NULL_Struktur.QA61_Magnet := FALSE;
+
+  // --- 2. Multiplexer (Auswahl Hand- oder Automatik-Signale) ---
+  IF "dbGlobal".Betriebsart.Einrichten THEN
+    // Im Einrichtbetrieb: Uebernehme Signale von FB300
+    "dbGlobal".Steuer_Final := "dbGlobal".Steuer_Hand;
+    
+  ELSIF "dbGlobal".Betriebsart.Automatik THEN
+    // Im Automatikbetrieb: Uebernehme Signale von FB500
+    "dbGlobal".Steuer_Final := "dbGlobal".Steuer_Auto;
+    
+  ELSE
+    // Weder Hand noch Auto (z.B. bei NOT-AUS): Keine Signale
+    "dbGlobal".Steuer_Final := NULL_Struktur;
   END_IF;
   
-  // Gegenseitige Verriegelung: Verhindere gleichzeitig Einfahren + Ausfahren MM20
-  IF sig_MB21 AND sig_MB22 THEN
-    sig_MB22 := FALSE;
+  // --- 3. Sicherheitsverriegelungen (arbeitet nur noch auf Steuer_Final) ---
+  
+  // Gegenseitige Verriegelung: Linksfahrt + Rechtsfahrt
+  IF "dbGlobal".Steuer_Final.QA5_Links AND "dbGlobal".Steuer_Final.QA6_Rechts THEN
+    "dbGlobal".Steuer_Final.QA5_Links := FALSE;
+    "dbGlobal".Steuer_Final.QA6_Rechts := FALSE;
   END_IF;
   
-  // Gegenseitige Verriegelung: Verhindere gleichzeitig Einfahren + Ausfahren MM30
-  IF sig_MB31 AND sig_MB32 THEN
-    sig_MB32 := FALSE;
+  // Gegenseitige Verriegelung: Einfahren + Ausfahren MM20
+  IF "dbGlobal".Steuer_Final.MB21_Ein AND "dbGlobal".Steuer_Final.MB22_Aus THEN
+    "dbGlobal".Steuer_Final.MB22_Aus := FALSE; // Vorrang fuer Einfahren
   END_IF;
   
-  // Gegenseitige Verriegelung: Verhindere gleichzeitig Einfahren + Ausfahren MM40
-  IF sig_MB41 AND sig_MB42 THEN
-    sig_MB42 := FALSE;
+  // Gegenseitige Verriegelung: Einfahren + Ausfahren MM30
+  IF "dbGlobal".Steuer_Final.MB31_Ein AND "dbGlobal".Steuer_Final.MB32_Aus THEN
+    "dbGlobal".Steuer_Final.MB32_Aus := FALSE; // Vorrang fuer Einfahren
   END_IF;
   
-  // Zuweisung interne Signale ? Hardware-Ausgaenge
+  // Gegenseitige Verriegelung: Einfahren + Ausfahren MM40
+  IF "dbGlobal".Steuer_Final.MB41_Ein AND "dbGlobal".Steuer_Final.MB42_Aus THEN
+    "dbGlobal".Steuer_Final.MB42_Aus := FALSE; // Vorrang fuer Einfahren
+  END_IF;
+  
+  // --- 4. Zuweisung (verriegelte Signale) -> Hardware-Ausgaenge ---
   
   // Zylinder MM20 Steuersignale -> Magazinzylinder
-  "-MB21" := sig_MB21;
-  "-MB22" := sig_MB22;
+  "-MB21" := "dbGlobal".Steuer_Final.MB21_Ein;
+  "-MB22" := "dbGlobal".Steuer_Final.MB22_Aus;
   
   // Zylinder MM30 Steuersignale -> Wippenzylinder
-  "-MB31" := sig_MB31;
-  "-MB32" := sig_MB32;
+  "-MB31" := "dbGlobal".Steuer_Final.MB31_Ein;
+  "-MB32" := "dbGlobal".Steuer_Final.MB32_Aus;
   
   // Zylinder MM40 Steuersignale -> Magnetzylinder
-  "-MB41" := sig_MB41;
-  "-MB42" := sig_MB42;
+  "-MB41" := "dbGlobal".Steuer_Final.MB41_Ein;
+  "-MB42" := "dbGlobal".Steuer_Final.MB42_Aus;
   
   // X-Achsen Steuersignale -> Schlittenmotor
-  "-QA5" := sig_QA5; // Linksfahrt
-  "-QA6" := sig_QA6; // Rechtsfahrt
+  "-QA5" := "dbGlobal".Steuer_Final.QA5_Links;   // Linksfahrt
+  "-QA6" := "dbGlobal".Steuer_Final.QA6_Rechts;  // Rechtsfahrt
   
-  // Magnet-Schuetz -> Magnet wird beim anziehen das Schuetzes deaktiviert.
-  "-QA61" := sig_QA61;
+  // Magnet-Schuetz -> Magnet
+  "-QA61" := "dbGlobal".Steuer_Final.QA61_Magnet;
   
 END_FUNCTION_BLOCK
-

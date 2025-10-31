@@ -4,11 +4,7 @@
 (* ====================================================================== *)
 FUNCTION_BLOCK FB200
 
-VAR_INPUT
-  Einrichtbetrieb   : BOOL; // Einrichtbetrieb aktiv
-  Automatikbetrieb  : BOOL; // Automatikbetrieb aktiv
-  Takt_1Hz         : BOOL; // 1Hz Taktsignal fuer Blinken
-  Position       : INT; // Positionszaehler aus FB1
+// VAR_INPUT (GELOESCHT)
 END_VAR
 
 BEGIN
@@ -32,15 +28,16 @@ BEGIN
   END_IF;
   
   // PF2: Grundstellung-Anzeige
-  // AKTION: Meldeleuchte AN wenn Achse rechts, alle Zylinder eingefahren, Magnet aktiv
-  "-PF2" := ("-BG13" AND "-BG21" AND "-BG31" AND "-BG41" AND NOT "-QA61");
+  // AKTION: Meldeleuchte AN wenn Achse rechts, alle Zylinder eingefahren, Magnet AUS
+  "-PF2" := ("-BG13" AND "-BG21" AND "-BG31" AND "-BG41" AND 
+             NOT "dbGlobal".Steuer_Final.QA61_Magnet);
   
   // PF3: Betriebsart-Anzeige
   // AKTION: Einrichtbetrieb = dauernd AN, Automatikbetrieb = 1Hz blinken
-  IF Einrichtbetrieb THEN
+  IF "dbGlobal".Betriebsart.Einrichten THEN
     "-PF3" := TRUE;
-  ELSIF Automatikbetrieb THEN
-    "-PF3" := Takt_1Hz;
+  ELSIF "dbGlobal".Betriebsart.Automatik THEN
+    "-PF3" := "dbGlobal".Takt_1Hz;
   ELSE
     "-PF3" := FALSE;
   END_IF;
@@ -55,15 +52,19 @@ BEGIN
   
   // PF6: Linksfahrt blinkend
   // AKTION: Meldeleuchte blinkt weahrend X-Achse nach links faehrt
-  "-PF6" := ("-QA5" AND Takt_1Hz);
+  "-PF6" := ("dbGlobal".Steuer_Final.QA5_Links AND "dbGlobal".Takt_1Hz);
   
   // PF7: Rechtsfahrt blinkend
   // AKTION: Meldeleuchte blinkt weahrend X-Achse nach rechts faehrt
-  "-PF7" := ("-QA6" AND Takt_1Hz);
+  "-PF7" := ("dbGlobal".Steuer_Final.QA6_Rechts AND "dbGlobal".Takt_1Hz);
   
   // PF8: Position erreicht
   // AKTION: Meldeleuchte AN wenn Position 1, 2, 3 oder 4 erreicht
-  "-PF8" := (Position = DB1.Pos1) OR (Position = DB1.Pos2) OR (Position = DB1.Pos3) OR (Position = DB1.Pos4);
+  // Liest die Soll-Positionen und die Ist-Position aus dbGlobal
+  "-PF8" := ("dbGlobal".Achse_X.IstPosition = "dbGlobal".Pos1_Kunststoff) OR
+             ("dbGlobal".Achse_X.IstPosition = "dbGlobal".Pos2_Metall) OR
+             ("dbGlobal".Achse_X.IstPosition = "dbGlobal".Pos3_Metall) OR
+             ("dbGlobal".Achse_X.IstPosition = "dbGlobal".Pos4_Reserve);
   
   // PF10: Zylinder MM20 eingefahren
   // AKTION: Meldeleuchte spiegelt Zustand Sensor -BG21
@@ -85,7 +86,9 @@ BEGIN
   // AKTION: Meldeleuchte AN wenn keine Materialerkennung
   "-PF32" := (NOT "-BG51" AND "-BG52");
   
-  // PF33: Magnet deaktiviert
-  // AKTION: Meldeleuchte AN wenn Magnet-Schuetz AUS
-  "-PF33" := "-QA61";
+  // PF33: Magnet (de)aktiviert
+  // AKTION: Meldeleuchte AN wenn Magnet-Schuetz AN
+  // (Hinweis: Ihr Kommentar "Magnet deaktiviert" scheint zur Logik "-QA61" (Magnet AN) widerspruechlich)
+  // Ich setze die Logik um, die da war:
+  "-PF33" := "dbGlobal".Steuer_Final.QA61_Magnet;
 END_FUNCTION_BLOCK

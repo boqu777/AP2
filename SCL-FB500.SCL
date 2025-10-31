@@ -1,10 +1,5 @@
 FUNCTION_BLOCK FB500 // Automatik-Betriebsablauf
 
-VAR_INPUT
-  // Dieser Eingang muss von FB0 (Betriebsartenwahl) kommen
-  Automatikbetrieb : BOOL; 
-END_VAR
-
 VAR // Statische Variablen (behalten ihren Wert)
  
   Schritt          : INT := 500; // Aktuelle Schrittnummer, 500 = Initialschritt
@@ -25,7 +20,7 @@ END_VAR
 BEGIN
 
   // --- 0. SCHUTZBEDINGUNG (Guard Clause) ---
-  IF NOT Automatikbetrieb THEN
+  IF NOT "dbGlobal".Betriebsart.Automatik THEN
    
     // 1. Interne Variablen zuruecksetzen
     Schritt := 500;
@@ -47,16 +42,16 @@ BEGIN
   Schritt_ALT    := Schritt;
 
   // --- 2. Grundstellung (fuer N-Aktionen) ---
-  // Loescht alle "haengenden" Signale aus dem Einrichtbetrieb
-  sig_QA5  := FALSE; 
-  sig_MB22 := FALSE; 
-  sig_MB21 := FALSE; 
-  sig_MB31 := FALSE; 
-  sig_MB32 := FALSE; 
-  sig_MB41 := FALSE; 
-  sig_MB42 := FALSE; 
-  sig_QA61 := FALSE; 
-  sig_QA6  := FALSE; 
+  // Setzt die 'Auto'-Steuerstruktur im DB1 zu Beginn jedes Zyklus zurueck.
+  "dbGlobal".Steuer_Auto.MB21_Ein    := FALSE;
+  "dbGlobal".Steuer_Auto.MB22_Aus    := FALSE;
+  "dbGlobal".Steuer_Auto.MB31_Ein    := FALSE;
+  "dbGlobal".Steuer_Auto.MB32_Aus    := FALSE;
+  "dbGlobal".Steuer_Auto.MB41_Ein    := FALSE;
+  "dbGlobal".Steuer_Auto.MB42_Aus    := FALSE;
+  "dbGlobal".Steuer_Auto.QA5_Links   := FALSE;
+  "dbGlobal".Steuer_Auto.QA6_Rechts  := FALSE;
+  "dbGlobal".Steuer_Auto.QA61_Magnet := FALSE;
   
   // --- 3. Schrittkette (Ablaufsteuerung) ---
   CASE Schritt OF
@@ -66,13 +61,13 @@ BEGIN
       
        // --- N-Aktionen (Grundstellung) START ---
       // 1. Zylinder (Pneumatik) aktiv in Grundstellung halten
-      sig_MB21 := TRUE; // Magazin einfahren (halten)
-      sig_MB31 := TRUE; // Wippe einfahren (halten)
-      sig_MB41 := TRUE; // Magnet-Zyl. einfahren (halten)
+      "dbGlobal".Steuer_Auto.MB21_Ein := TRUE; // Magazin einfahren (halten)
+      "dbGlobal".Steuer_Auto.MB31_Ein := TRUE; // Wippe einfahren (halten)
+      "dbGlobal".Steuer_Auto.MB41_Ein := TRUE; // Magnet-Zyl. einfahren (halten)
 
       // 2. X-Achse (Motor) nur fahren, BIS Endlage erreicht ist
       IF NOT "-BG13" THEN 
-        sig_QA6 := TRUE;  // Tisch nach rechts fahren
+        "dbGlobal".Steuer_Auto.QA6_Rechts  := FALSE;  // Tisch nach rechts fahren
       END_IF; 
       // --- N-Aktionen (Grundstellung) ENDE ---
     
@@ -88,8 +83,8 @@ BEGIN
     // --- Schritt 501: Teileerkennung ---
     501:
        IF Schritt_POS_FL THEN
-        Teil_Kunststoff := FALSE; 
-        Teil_Metall     := FALSE; 
+        "dbGlobal".Teilemerker.Kunststoff := FALSE;
+        "dbGlobal".Teilemerker.Metall  := FALSE; 
       END_IF;
       // Transition: Alternative Verzweigung (Teile pruefen)
       IF ("-BG51" AND "-BG52") THEN           // "Metall mit Bohrung"
@@ -102,18 +97,18 @@ BEGIN
        
     // --- Schritt 502: Teil = "Metall mit Bohrung" ---
     502: 
-      // L-Aktion: Lade Soll-Position C2 (aus DB1)
+      // L-Aktion: Lade Lade Soll-Position (in dbGlobal)
       IF Schritt_POS_FL THEN
-        "C2" := "Positionen".Pos2;
+        "dbGlobal".Achse_X.SollPosition := "dbGlobal".Pos2_Metall_mB;
       END_IF;
       Schritt := 503; 
 
     // --- Schritt 512: Teil = "Kunststoff" (502a) ---
     512: 
-      // L-Aktion: Lade Soll-Position C2 (aus DB1)
+      // L-Aktion: Lade Soll-Position und setze Teilemerker
       IF Schritt_POS_FL THEN
-        "C2" := "Positionen".Pos1;
-        Teil_Kunststoff := TRUE;
+        "dbGlobal".Achse_X.SollPosition := "dbGlobal".Pos1_Kunststoff;
+        "dbGlobal".Teilemerker.Kunststoff := TRUE;
       END_IF;
       Schritt := 503; 
 
@@ -121,8 +116,8 @@ BEGIN
     522: 
       // L-Aktion: Lade Soll-Position C2 (aus DB1)
       IF Schritt_POS_FL THEN
-        "C2" := "Positionen".Pos1; 
-        Teil_Metall := TRUE;
+        "dbGlobal".Achse_X.SollPosition := "dbGlobal".Pos1_Kunststoff; 
+        "dbGlobal".Teilemerker.Metall_oB := TRUE;
       END_IF;
       Schritt := 503; 
        
@@ -130,19 +125,19 @@ BEGIN
     503: 
       // N-Aktion: Tisch Linksfahrt aktivieren
       IF NOT "-BG11" THEN
-      sig_QA5 := TRUE; 
+      "dbGlobal".Steuer_Auto.QA5_Links := TRUE; 
       END_IF;
       // Inkrementgeber fuer Ist-Position in FB1 ("Position")
       // Transition: Warten, bis Ist-Position ("Position")
       // die Soll-Position (C2) erreicht hat.
-      IF ("Position" = C2) THEN
-        sig_QA5 := FALSE; 
+      IF ("dbGlobal".Achse_X.IstPosition >= "dbGlobal".Achse_X.SollPosition) THEN
+        "dbGlobal".Steuer_Auto.QA5_Links := FALSE; 
         Schritt := 504; 
       END_IF;
        
     // --- Schritt 504: Zylinder MM20 ausfahren --- Bauteil aus dem Magazin schieben
     504: 
-      sig_MB22 := TRUE; 
+      "dbGlobal".Steuer_Auto.MB22_Aus := TRUE; 
      
       TIMER_S504(IN := (Schritt = 504) AND "-BG22", PT := T#1s); 
       IF TIMER_S504.Q THEN
@@ -155,7 +150,7 @@ BEGIN
       IF Schritt_POS_FL THEN 
         TIMER_S504(IN := FALSE); 
       END_IF;
-      sig_MB21 := TRUE; 
+      "dbGlobal".Steuer_Auto.MB21_Ein := TRUE; 
      
       TIMER_S505(IN := (Schritt = 505) AND "-BG21", PT := T#5s);
       IF TIMER_S505.Q THEN
@@ -170,18 +165,18 @@ BEGIN
       END_IF;
      
       // Fall 1: Kunststoff" (Pos.1)
-      IF  (Teil_Kunststoff) THEN 
+      IF  ("dbGlobal".Teilemerker.Kunststoff) THEN 
         Schritt := 507; // Kunststoff auf Wippe abwerfen
       // Fall 2: "Metall o. Bohrung" (Pos.3)
-      ELSIF (Teil_Metall) THEN 
+      ELSIF ("dbGlobal".Teilemerker.Metall) THEN 
         Schritt := 517; // Metall-Ast
-      ELSIF C2 = DB1.Pos2 THEN
+      ELSIF ("dbGlobal".Achse_X.SollPosition = "dbGlobal".Pos2_Metall_mB) THEN
         Schritt := 509;  
       END_IF;
        
     // --- Schritt 507: Wippe ausfahren (Kunststoff / Metall m. Bohrung) ---
     507: 
-      sig_MB32 := TRUE; 
+      "dbGlobal".Steuer_Auto.MB32_Aus := TRUE; 
      
       TIMER_S507(IN := (Schritt = 507) AND "-BG32", PT := T#2s);
       IF TIMER_S507.Q THEN
@@ -190,7 +185,7 @@ BEGIN
        
     // --- Schritt 517: Magnet-Zylinder ausfahren (Metall-Ast) ---
     517: 
-      sig_MB42 := TRUE; 
+      "dbGlobal".Steuer_Auto.MB42_Aus := TRUE; 
      
       TIMER_S507a(IN := (Schritt = 517) AND "-BG42", PT := T#2s);
       IF TIMER_S507a.Q THEN
@@ -203,7 +198,7 @@ BEGIN
       IF Schritt_POS_FL THEN 
         TIMER_S507a(IN := FALSE); 
       END_IF;
-      sig_MB41 := TRUE; 
+      "dbGlobal".Steuer_Auto.MB41_Ein := TRUE; 
 
       TIMER_S507b(IN := (Schritt = 527) AND "-BG41", PT := T#2s);
       IF TIMER_S507b.Q THEN
@@ -216,8 +211,8 @@ BEGIN
       IF Schritt_POS_FL THEN 
         TIMER_S507b(IN := FALSE); 
       END_IF;
-      sig_QA61 := TRUE; 
-      sig_MB32 := TRUE; 
+      "dbGlobal".Steuer_Auto.QA61_Magnet := TRUE; 
+      "dbGlobal".Steuer_Auto.MB32_Aus := TRUE; 
      
       TIMER_S507c(IN := (Schritt = 537) AND "-BG32", PT := T#2s);
       IF TIMER_S507c.Q THEN
@@ -231,8 +226,8 @@ BEGIN
         TIMER_S507(IN := FALSE);
         TIMER_S507c(IN := FALSE);
       END_IF;
-      sig_MB31 := TRUE; 
-      sig_QA61 := FALSE;
+      "dbGlobal".Steuer_Auto.MB31_Ein := TRUE; 
+      "dbGlobal".Steuer_Auto.QA61_Magnet := FALSE;
      
       TIMER_S508(IN := (Schritt = 508) AND "-BG31", PT := T#1s);
       IF TIMER_S508.Q THEN
@@ -246,7 +241,7 @@ BEGIN
         TIMER_S508(IN := FALSE);
       END_IF;
      
-      sig_QA6 := TRUE; 
+      "dbGlobal".Steuer_Auto.QA6 := TRUE; 
      
       IF "-BG13" THEN 
         Schritt := 510;

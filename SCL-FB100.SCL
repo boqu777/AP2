@@ -6,10 +6,6 @@
 (* ====================================================================== *)
 FUNCTION_BLOCK FB100
 
-VAR_OUTPUT
-  Takt_1Hz         : BOOL; // 1Hz Taktsignal (500ms an, 500ms aus)
-END_VAR
-
 VAR
   Timer_ON         : TON; // Timer fuer AN-Phase (500ms)
   Timer_OFF        : TON; // Timer fuer AUS-Phase (500ms)
@@ -23,7 +19,7 @@ BEGIN
     0:
       // Schritt 0: AUS-Phase
       // AKTION: Taktsignal AUS, Timer fuer 500ms starten
-      Takt_1Hz := FALSE;
+      "dbGlobal".Takt_1Hz := FALSE;
       Timer_OFF(IN := TRUE, PT := T#500ms);
       
       // TRANSITION: 500ms abgelaufen
@@ -35,7 +31,7 @@ BEGIN
     1:
       // Schritt 1: AN-Phase
       // AKTION: Taktsignal AN, Timer fuer 500ms starten
-      Takt_1Hz := TRUE;
+      "dbGlobal".Takt_1Hz := TRUE;
       Timer_ON(IN := TRUE, PT := T#500ms);
       
       // TRANSITION: 500ms abgelaufen
