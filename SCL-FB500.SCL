@@ -58,23 +58,18 @@ BEGIN
   sig_QA61 := FALSE; 
   sig_QA6  := FALSE; 
   
-  // --- b. NEU: INITIALISIERUNG / GRUNDSTELLUNG ANFAHREN ---
-  // Solange die Schrittkette in Schritt 500 (Warten auf Start) ist,
-  // werden alle Zylinder/Achsen aktiv in ihre Grundstellung gefahren.
-  IF Schritt = 500 THEN
-    IF NOT "-BG21" THEN // Magazin nicht eingefahren
-      sig_MB21 := TRUE;
-    END_IF;
-    IF NOT "-BG31" THEN // Wippe nicht eingefahren
-      sig_MB31 := TRUE;
-    END_IF;
-    IF NOT "-BG41" THEN // Magnet-Zylinder nicht eingefahren
-      sig_MB41 := TRUE;
-    END_IF;
-    IF NOT "-BG13" THEN // Tisch nicht rechts (Grundstellung)
-      sig_QA6 := TRUE;  // Fahre Tisch nach rechts
-    END_IF;
-  END_IF;
+  // 1. Zylinder (Pneumatik) aktiv in Grundstellung halten
+      // Diese Ventile bleiben beaufschlagt, solange die Kette in S500 ist.
+      sig_MB21 := TRUE; // Magazin einfahren (halten)
+      sig_MB31 := TRUE; // Wippe einfahren (halten)
+      sig_MB41 := TRUE; // Magnet-Zyl. einfahren (halten)
+
+      // 2. X-Achse (Motor) nur fahren, BIS Endlage erreicht ist
+      IF NOT "-BG13" THEN 
+        sig_QA6 := TRUE;  // Tisch nach rechts fahren
+      END_IF; // Sobald "-BG13" TRUE ist, wird sig_QA6 (per N-Aktion) FALSE.
+
+      
   // --- 3. Schrittkette (Ablaufsteuerung) ---
   CASE Schritt OF
    
