@@ -1,9 +1,10 @@
 (* ====================================================================== *)
 (* FB300: EINRICHTBETRIEB (HANDBETRIEB)                                   *)
 (*                                                                        *)
-(* Steuert alle manuellen Aktor-Bewegungen im Tipp-Betrieb.               *)
+(* Steuert alle manuellen Aktor-Bewegungen.                               *)
 (* Ist nur aktiv, wenn die globale Variable "Einrichtbetrieb" TRUE ist.   *)
 (* Liest die Taster (-SJ6 bis -SJ12) und steuert Achsen/Zylinder direkt.  *)
+(* MM30/MM40: Einfahren = Selbsthaltung, Ausfahren = Tipp-Betrieb.        *)
 (* ====================================================================== *)
 
 FUNCTION_BLOCK FB300 // Einrichtbetrieb (Handbetrieb)
@@ -14,7 +15,7 @@ END_VAR
 
 VAR
   // Interne Variablen des FBs
-  TIMER_QA61      : TOF;  // Timer fuer Magnet-Abschaltung (5s Nachlauf)
+  TIMER_QA61      : TP;  // Timer fuer Magnet-Abschaltung (5s Nachlauf)
 END_VAR
 
 BEGIN // Start der FB300-Logik
@@ -22,15 +23,7 @@ BEGIN // Start der FB300-Logik
   // --- 0. SCHUTZBEDINGUNG (Guard Clause) ---
   // Prueft, ob der Baustein ueberhaupt aktiv sein soll.
   IF Einrichtbetrieb THEN
-    sig_QA5 := FALSE; 
-    sig_MB22 := FALSE; 
-    sig_MB21 := FALSE; 
-    sig_MB31 := FALSE; 
-    sig_MB32 := FALSE; 
-    sig_MB41 := FALSE; 
-    sig_MB42 := FALSE; 
-    sig_QA61 := FALSE; 
-    sig_QA6 := FALSE;
+    
     
      // --- HANDBETRIEB AKTIV ---
     
@@ -84,19 +77,29 @@ BEGIN // Start der FB300-Logik
     END_IF;
 
     // -- Steuerung Magnet-Schuetz QA61 (mit TOF-Timer) --
-    // Magnet (sig_QA61) ist AN, wenn SJ12 gedrueckt wird.
-    // Wenn SJ12 losgelassen wird, bleibt er noch 5s AN.
+    // Magnet (sig_QA61) ist aus, wenn SJ12 gedrueckt wird.
+    // Wenn SJ12 losgelassen wird, bleibt er noch 5s aus.
     TIMER_QA61(IN := "-SJ12", PT := T#5s);
     sig_QA61 := TIMER_QA61.Q;
 
   ELSE
-    
-    
+    // --- BAUSTEIN NICHT AKTIV ---
+    // Alle Ausgaenge zuruecksetzen, wenn Einrichtbetrieb beendet wird.
+    sig_QA5  := FALSE;
+    sig_MB22 := FALSE;
+    sig_MB21 := FALSE;
+    sig_MB31 := FALSE;
+    sig_MB32 := FALSE;
+    sig_MB41 := FALSE;
+    sig_MB42 := FALSE;
+    sig_QA61 := FALSE;
+    sig_QA6  := FALSE;
+
     // Timer ebenfalls zuruecksetzen
     TIMER_QA61(IN := FALSE);
 
     // Bearbeitung beenden
-    RETURN; 
+    RETURN;
   END_IF;
 
 END_FUNCTION_BLOCK

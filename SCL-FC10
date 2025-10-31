@@ -1,0 +1,48 @@
+(*====================================================================== *)
+(* FC10: RESET AKTORIK                                                    *)
+(* ====================================================================== *)
+(* Beschreibung:                                                          *)
+(* Setzt alle Aktor-Signal-Merker auf FALSE, wenn KEINE der                *)
+(* Haupt-Betriebsarten (Einrichtung ODER Automatik) aktiv ist.             *)
+(* Dies stellt einen sicheren Grundzustand für die Aktorik her.           *)
+(* *)
+(* Verwendete globale Variablen (Lesen):                                  *)
+(* "Einrichtbetrieb"  (M 1.1)                                           *)
+(* "Automatikbetrieb" (M 1.2)                                           *)
+(* *)
+(* Verwendete globale Variablen (Schreiben):                              *)
+(* Alle "sig_..." Merker (M0.0 - M1.0)                                  *)
+(* *)
+(* Aufruf-Empfehlung:                                                     *)
+(* Im OB1, NACH FB0 (Betriebsart) und VOR FB300/FB500 (Bewegungslogik).     *)
+(* ====================================================================== *)
+FUNCTION FC10 : VOID
+TITLE = 'Reset Aktorik'
+
+BEGIN
+
+    // --- 1. Pruefen, ob alle Betriebsarten AUS sind ---
+    // (Liest M 1.1 und M 1.2)
+    
+    IF (NOT "Einrichtbetrieb") AND (NOT "Automatikbetrieb") THEN
+        
+        // --- 2. Alle Aktor-Signal-Merker sicher zuruecksetzen ---
+        // (VKE = TRUE, da beide Betriebsarten FALSCH sind)
+        
+        "sig_MB21"  := FALSE; // Befehl: MM20 einfahren
+        "sig_MB22"  := FALSE; // Befehl: MM20 ausfahren
+        "sig_MB31"  := FALSE; // Befehl: MM30 einfahren
+        "sig_MB32"  := FALSE; // Befehl: MM30 ausfahren
+        "sig_MB41"  := FALSE; // Befehl: MM40 einfahren
+        "sig_MB42"  := FALSE; // Befehl: MM40 ausfahren
+        "sig_QA5"   := FALSE; // Befehl: X-Achse Linksfahrt
+        "sig_QA6"   := FALSE; // Befehl: X-Achse Rechtsfahrt
+        "sig_QA61"  := FALSE; // Befehl: Schuetz Magnet
+        
+    END_IF;
+    
+    // Wenn eine Betriebsart aktiv ist (Einrichten ODER Automatik), 
+    // wird dieser IF-Block uebersprungen und die Bausteine
+    // FB300 / FB500 koennen die Merker wie gewohnt setzen.
+
+END_FUNCTION

@@ -21,6 +21,15 @@ BEGIN
   // Es kann immer nur eine Betriebsart aktiv sein.
   Einrichtbetrieb := FALSE; 
   Automatikbetrieb := FALSE;
+ 
+    sig_MB22 := FALSE; 
+    sig_MB21 := FALSE; 
+    sig_MB31 := FALSE; 
+    sig_MB32 := FALSE; 
+    sig_MB41 := FALSE; 
+    sig_MB42 := FALSE; 
+    sig_QA5 := FALSE;
+    sig_QA6 := FALSE;
   
   // --- 2. Pruefung der Freigabebedingungen ---
   // Es werden die zentralen Freigaben (Sicherheitskette, Versorgung etc.) geprueft.
@@ -44,7 +53,7 @@ BEGIN
     ELSE
       Automatikbetrieb := TRUE; // Automatikbetrieb setzen
     END_IF;
-    
+    RETURN;
   END_IF; // Ende der IF-Abfrage fuer Freigabebedingungen
   
   // Wenn die Freigabebedingungen (KE2, BP1, etc.) nicht erfuellt sind,

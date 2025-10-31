@@ -58,8 +58,14 @@ BEGIN
   sig_QA61 := FALSE; 
   sig_QA6  := FALSE; 
   
-  // 1. Zylinder (Pneumatik) aktiv in Grundstellung halten
-      // Diese Ventile bleiben beaufschlagt, solange die Kette in S500 ist.
+  // --- 3. Schrittkette (Ablaufsteuerung) ---
+  CASE Schritt OF
+   
+    // --- Schritt 500: Initialschritt / Grundstellung ---
+    500: 
+      
+       // --- N-Aktionen (Grundstellung) START ---
+      // 1. Zylinder (Pneumatik) aktiv in Grundstellung halten
       sig_MB21 := TRUE; // Magazin einfahren (halten)
       sig_MB31 := TRUE; // Wippe einfahren (halten)
       sig_MB41 := TRUE; // Magnet-Zyl. einfahren (halten)
@@ -67,19 +73,11 @@ BEGIN
       // 2. X-Achse (Motor) nur fahren, BIS Endlage erreicht ist
       IF NOT "-BG13" THEN 
         sig_QA6 := TRUE;  // Tisch nach rechts fahren
-      END_IF; // Sobald "-BG13" TRUE ist, wird sig_QA6 (per N-Aktion) FALSE.
-
-      
-  // --- 3. Schrittkette (Ablaufsteuerung) ---
-  CASE Schritt OF
-   
-    // --- Schritt 500: Initialschritt / Grundstellung ---
-    500: 
+      END_IF; 
+      // --- N-Aktionen (Grundstellung) ENDE ---
+    
       // L-Aktion: Merker zuruecksetzen
-      IF Schritt_POS_FL THEN
-        Teil_Kunststoff := FALSE; 
-        Teil_Metall     := FALSE; 
-      END_IF;
+      
      
       // Transition: Warten auf Grundstellung, Teile im Magazin und Startbefehl -SJ5
       IF ("-SJ5" AND "-BG13" AND "-BG21" AND "-BG31" 
@@ -88,13 +86,17 @@ BEGIN
       END_IF;
 
     // --- Schritt 501: Teileerkennung ---
-    501: 
+    501:
+       IF Schritt_POS_FL THEN
+        Teil_Kunststoff := FALSE; 
+        Teil_Metall     := FALSE; 
+      END_IF;
       // Transition: Alternative Verzweigung (Teile pruefen)
-      IF ("-BG51" AND "-BG52") THEN            // "Metall mit Bohrung"
+      IF ("-BG51" AND "-BG52") THEN           // "Metall mit Bohrung"
         Schritt := 502; 
       ELSIF (NOT "-BG51" AND NOT "-BG52") THEN // "Kunststoff"
         Schritt := 512; 
-      ELSIF ("-BG51" AND NOT "-BG52") THEN     // "Metall ohne Bohrung"
+      ELSIF ("-BG51" AND NOT "-BG52") THEN // "Metall ohne Bohrung"
         Schritt := 522; 
       END_IF;
        
@@ -102,7 +104,7 @@ BEGIN
     502: 
       // L-Aktion: Lade Soll-Position C2 (aus DB1)
       IF Schritt_POS_FL THEN
-        C2 := DB1.Pos2;
+        "C2" := "Positionen".Pos2;
       END_IF;
       Schritt := 503; 
 
@@ -110,7 +112,7 @@ BEGIN
     512: 
       // L-Aktion: Lade Soll-Position C2 (aus DB1)
       IF Schritt_POS_FL THEN
-        C2 := DB1.Pos1;
+        "C2" := "Positionen".Pos1;
         Teil_Kunststoff := TRUE;
       END_IF;
       Schritt := 503; 
@@ -119,7 +121,7 @@ BEGIN
     522: 
       // L-Aktion: Lade Soll-Position C2 (aus DB1)
       IF Schritt_POS_FL THEN
-        C2 := DB1.Pos1; 
+        "C2" := "Positionen".Pos1; 
         Teil_Metall := TRUE;
       END_IF;
       Schritt := 503; 
@@ -127,11 +129,13 @@ BEGIN
     // --- Schritt 503: Schlitten faehrt zur Soll-Position ---
     503: 
       // N-Aktion: Tisch Linksfahrt aktivieren
+      IF NOT "-BG11" THEN
       sig_QA5 := TRUE; 
+      END_IF;
       // Inkrementgeber fuer Ist-Position in FB1 ("Position")
       // Transition: Warten, bis Ist-Position ("Position")
       // die Soll-Position (C2) erreicht hat.
-      IF (Position >= C2) THEN
+      IF ("Position" = C2) THEN
         sig_QA5 := FALSE; 
         Schritt := 504; 
       END_IF;
@@ -140,7 +144,7 @@ BEGIN
     504: 
       sig_MB22 := TRUE; 
      
-      TIMER_S504(IN := "-BG22", PT := T#1s); 
+      TIMER_S504(IN := (Schritt = 504) AND "-BG22", PT := T#1s); 
       IF TIMER_S504.Q THEN
         Schritt := 505;
       END_IF;
@@ -153,7 +157,7 @@ BEGIN
       END_IF;
       sig_MB21 := TRUE; 
      
-      TIMER_S505(IN := "-BG21", PT := T#5s);
+      TIMER_S505(IN := (Schritt = 505) AND "-BG21", PT := T#5s);
       IF TIMER_S505.Q THEN
         Schritt := 506;
       END_IF;
@@ -179,7 +183,7 @@ BEGIN
     507: 
       sig_MB32 := TRUE; 
      
-      TIMER_S507(IN := "-BG32", PT := T#2s);
+      TIMER_S507(IN := (Schritt = 507) AND "-BG32", PT := T#2s);
       IF TIMER_S507.Q THEN
         Schritt := 508; 
       END_IF;
@@ -188,7 +192,7 @@ BEGIN
     517: 
       sig_MB42 := TRUE; 
      
-      TIMER_S507a(IN := "-BG42", PT := T#2s);
+      TIMER_S507a(IN := (Schritt = 517) AND "-BG42", PT := T#2s);
       IF TIMER_S507a.Q THEN
         Schritt := 527; 
       END_IF;
@@ -201,7 +205,7 @@ BEGIN
       END_IF;
       sig_MB41 := TRUE; 
 
-      TIMER_S507b(IN := "-BG41", PT := T#2s);
+      TIMER_S507b(IN := (Schritt = 527) AND "-BG41", PT := T#2s);
       IF TIMER_S507b.Q THEN
         Schritt := 537; 
       END_IF;
@@ -215,7 +219,7 @@ BEGIN
       sig_QA61 := TRUE; 
       sig_MB32 := TRUE; 
      
-      TIMER_S507c(IN := "-BG32", PT := T#2s);
+      TIMER_S507c(IN := (Schritt = 537) AND "-BG32", PT := T#2s);
       IF TIMER_S507c.Q THEN
         Schritt := 508; 
       END_IF;
@@ -230,7 +234,7 @@ BEGIN
       sig_MB31 := TRUE; 
       sig_QA61 := FALSE;
      
-      TIMER_S508(IN := "-BG31", PT := T#1s);
+      TIMER_S508(IN := (Schritt = 508) AND "-BG31", PT := T#1s);
       IF TIMER_S508.Q THEN
         Schritt := 509; 
       END_IF;

@@ -5,7 +5,7 @@ TITLE =Zyklus
 // 
 // Dieser OB1 ruft alle notwendigen FBs
 // fuer die Sortieranlage auf.
-VERSION : 0.0
+VERSION : 1.0
 
 
 VAR_TEMP
@@ -21,23 +21,24 @@ TITLE = "1. Betriebsartenwahl (FB0) aufrufen"
       CALL "FB0 Betriebsartenwahl" , "IDB_FB0" (
            Einrichtbetrieb          := "Einrichtbetrieb",// M 1.1
            Automatikbetrieb         := "Automatikbetrieb");// M 1.2
-
+           
+NETWORK
+TITLE = "2. Zentraler Reset Aktorik (FC10)"
+//
+// Ruft den FC auf, der alle Aktor-Merker zuruecksetzt,
+// wenn keine Betriebsart aktiv ist.
+//
+    CALL "Reset Aktorik" // Symbolischer Name von FC10
 
 NETWORK
-TITLE = "2. Taktgeber (FB100) aufrufen"
+TITLE = "3. Taktgeber (FB100) aufrufen"
 //// --- Netzwerk 2: Taktgeber ---
 //// Ruft FB100 auf, um einen 1Hz-Takt fuer
 //// die Blinkleuchten zu erzeugen.
       CALL "FB100 Taktgeber" , "IDB_FB100" (
            Takt_1Hz                 := "g_bTakt_1Hz");// Takt an M10.0 uebergeben
 
-NETWORK
-TITLE = "3. Positionserfassung (FB1) aufrufen"
-//// --- Netzwerk 3: Positionserfassung ---
-//// Ruft FB1 auf. Dieser Baustein liest den Inkrementalgeber
-//// (-BG12) und die Fahrtrichtungen (sig_QA5/sig_QA6)
-//// und schreibt direkt auf die globale Variable "Position" (MW8).
-      CALL "FB1 Positionserfassung" , "IDB_FB1" ;// Instanz-DB 
+
 
 NETWORK
 TITLE = "4. Einrichtbetrieb (FB300) aufrufen"
@@ -57,7 +58,15 @@ TITLE = "5. Automatikbetrieb (FB500) aufrufen"
            Automatikbetrieb         := "Automatikbetrieb");
 
 NETWORK
-TITLE = "6.FB200 Anzeige (FB200) aufrufen"
+TITLE = "6. Positionserfassung (FB1) aufrufen"
+//// --- Netzwerk 3: Positionserfassung ---
+//// Ruft FB1 auf. Dieser Baustein liest den Inkrementalgeber
+//// (-BG12) und die Fahrtrichtungen (sig_QA5/sig_QA6)
+//// und schreibt direkt auf die globale Variable "Position" (MW8).
+      CALL "FB1 Positionserfassung" , "IDB_FB1";//Instanz-DB 
+      		
+NETWORK
+TITLE = "7.FB200 Anzeige (FB200) aufrufen"
 //// --- Netzwerk 6: Anzeige (Meldeleuchten) ---
 //// Ruft FB200 auf, um alle Meldeleuchten
 //// basierend auf den aktuellen Zustaenden zu steuern
@@ -65,11 +74,11 @@ TITLE = "6.FB200 Anzeige (FB200) aufrufen"
            Einrichtbetrieb          := "Einrichtbetrieb",// M 1.1
            Automatikbetrieb         := "Automatikbetrieb",// M 1.2
            Takt_1Hz                 := "g_bTakt_1Hz",// Takt von NW2
-           Position                 := "Position");// MW 8
+           Position                 := "Position"); //MW8 IST position
 
 
 NETWORK
-TITLE = "7. Aktionen / Ausgaenge (FB600) aufrufen"
+TITLE = "8. Aktionen / Ausgaenge (FB600) aufrufen"
 //// --- Netzwerk 7: Aktionen und Ausgaenge ---
 //// Ruft FB600 auf. Dieser Baustein enthaelt
 //// die gegenseitigen Verriegelungen (z.B. QA5/QA6)
