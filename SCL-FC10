@@ -26,15 +26,15 @@ BEGIN
         // --- 2. Alle Aktor-Signal-Merker sicher zuruecksetzen ---
         // (VKE = TRUE, da beide Betriebsarten FALSCH sind)
         
-        "sig_MB21"  := FALSE; // Befehl: MM20 einfahren
-        "sig_MB22"  := FALSE; // Befehl: MM20 ausfahren
-        "sig_MB31"  := FALSE; // Befehl: MM30 einfahren
-        "sig_MB32"  := FALSE; // Befehl: MM30 ausfahren
-        "sig_MB41"  := FALSE; // Befehl: MM40 einfahren
-        "sig_MB42"  := FALSE; // Befehl: MM40 ausfahren
-        "sig_QA5"   := FALSE; // Befehl: X-Achse Linksfahrt
-        "sig_QA6"   := FALSE; // Befehl: X-Achse Rechtsfahrt
-        "sig_QA61"  := FALSE; // Befehl: Schuetz Magnet
+      "dbGlobal".Steuer_Hand.MB21_Ein    := FALSE;
+      "dbGlobal".Steuer_Hand.MB22_Aus    := FALSE;
+      "dbGlobal".Steuer_Hand.MB31_Ein    := FALSE;
+      "dbGlobal".Steuer_Hand.MB32_Aus    := FALSE;
+      "dbGlobal".Steuer_Hand.MB41_Ein    := FALSE;
+      "dbGlobal".Steuer_Hand.MB42_Aus    := FALSE;
+      "dbGlobal".Steuer_Hand.QA5_Links   := FALSE;
+      "dbGlobal".Steuer_Hand.QA6_Rechts  := FALSE;
+      "dbGlobal".Steuer_Hand.QA61_Magnet := FALSE;
         
     END_IF;
     

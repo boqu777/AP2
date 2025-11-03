@@ -1,0 +1,14 @@
+TYPE UDT2
+  VERSION : '1.0'
+  STRUCT
+    moveLeft : BOOL;
+    moveRight : BOOL;
+    magCylIn : BOOL;
+    magCylOut : BOOL;
+    rockerIn : BOOL;
+    rockerOut : BOOL;
+    magnetCylIn : BOOL;
+    magnetCylOut : BOOL;
+    magnetOn : BOOL;
+  END_STRUCT
+END_TYPE
