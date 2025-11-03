@@ -1,0 +1,48 @@
+// Library: AP2_SortingStation
+// Tested with: CPU 314C-2 PN/DP
+// Engineering: Step7 v5.6 SP1
+//
+// Functionality: Determines the active operating mode (Auto/Setup)
+//                based on system enable signals.
+//
+// Change log table:
+// Version  Date            Expert in charge    Changes applied
+// 01.00.00 [03.11.25]      (Boris Quade)       First released version (from SCL-FB0.SCL)
+// 
+
+FUNCTION_BLOCK FB0 // ModeSelection
+
+  VAR_INPUT
+    notstopOK : BOOL;         // -KE2: E-Stop OK
+    pressureOK : BOOL;        // -BP1: Pressure OK
+    controlOn : BOOL;         // -SJ3: Control ON
+    motorProtectionOK : BOOL; // -FC7: Motor Protection OK
+    selectorAuto : BOOL;      // -SJ4: (FALSE=Setup, TRUE=Auto)
+  END_VAR
+  
+  VAR_OUTPUT
+    enableSetup : BOOL := FALSE; // Freigabe Einrichtbetrieb
+    enableAuto : BOOL := FALSE;  // Freigabe Automatikbetrieb
+  END_VAR
+
+BEGIN
+
+  // --- 1. Grundzustand ---
+  enableSetup := FALSE;
+  enableAuto := FALSE;
+
+  // --- 2. Freigabebedingungen pruefen ---
+  // Nur wenn alle Bedingungen erfuellt sind, Modus auswaehlen.
+  IF (notstopOK AND pressureOK AND controlOn AND motorProtectionOK) THEN
+
+    // --- 3. Wahlschalter abfragen ---
+    IF NOT selectorAuto THEN
+      enableSetup := TRUE; // Einrichtbetrieb
+    ELSE
+      enableAuto := TRUE;  // Automatikbetrieb
+    END_IF;
+
+  END_IF;
+  // Wenn Bedingungen nicht erfuellt, bleiben beide Ausgaenge FALSE.
+
+END_FUNCTION_BLOCK

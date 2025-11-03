@@ -1,0 +1,55 @@
+// Library: AP2_SortingStation
+// Tested with: CPU 314C-2 PN/DP
+// Engineering: Step7 v5.6 SP1
+//
+// Functionality: Generates a global 1Hz clock signal (500ms ON / 500ms OFF).
+//                Used for all blinking indicator lights.
+//
+// Change log table:
+// Version  Date        Expert in charge  Changes applied
+// 01.00.00 [Date]      (Your Name)       First released version (from SCL-FB100.SCL)
+// 01.01.00 [Date]      (Your Name)       Cleaned interface (no global access)
+//
+FUNCTION_BLOCK FB100 // ClockGenerator
+
+  VAR_OUTPUT
+    clock1Hz : BOOL; // 1Hz clock signal (500ms ON, 500ms OFF)
+  END_VAR
+  
+  VAR // Static
+    statTimerOn : TON;  // Timer for ON phase
+    statTimerOff : TON; // Timer for OFF phase
+    statState : INT;    // 0 = OFF, 1 = ON
+  END_VAR
+
+BEGIN
+
+  CASE statState OF
+    
+    // --- Phase 0: AUS ---
+    0:
+      clock1Hz := FALSE;
+      statTimerOff(IN := TRUE, PT := T#500ms);
+      
+      // Transition
+      IF statTimerOff.Q THEN
+        statTimerOff(IN := FALSE);
+        statState := 1;
+      END_IF;
+    
+    // --- Phase 1: AN ---
+    1:
+      clock1Hz := TRUE;
+      statTimerOn(IN := TRUE, PT := T#500ms);
+      
+      // Transition
+      IF statTimerOn.Q THEN
+        statTimerOn(IN := FALSE);
+        statState := 0;
+      END_IF;
+
+  ELSE
+    statState := 0;
+  END_CASE;
+
+END_FUNCTION_BLOCK

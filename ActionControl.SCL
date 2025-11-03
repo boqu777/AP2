@@ -1,0 +1,68 @@
+// Library: AP2_SortingStation
+// Tested with: CPU 314C-2 PN/DP
+// Engineering: Step7 v5.6 SP1
+//
+// Functionality: Applies safety interlocks to the final commands.
+//                Prevents simultaneous opposing movements.
+//                Blocks all outputs if an error is active.
+//
+// Change log table:
+// Version  Date        Expert in charge  Changes applied
+// 01.00.00 [Date]      (Your Name)       First released version (from SCL-FB600.SCL)
+// 01.01.00 [Date]      (Your Name)       Cleaned interface (UDTs)
+// 01.02.00 [Date]      (Your Name)       Added Error Stop
+//
+FUNCTION_BLOCK FB600 // ActionControl
+
+  VAR_IN_OUT
+    commands : "typeActorCommands"; // UDT2: Final commands
+    errorActive : BOOL;             // Global Error Flag
+  END_VAR
+
+BEGIN
+  
+  // --- 1. Globale Fehlerverriegelung ---
+  // Bei aktivem Fehler alle Aktor-Befehle sperren.
+  IF errorActive THEN
+    commands.moveLeft := FALSE;
+    commands.moveRight := FALSE;
+    commands.magCylIn := FALSE;
+    commands.magCylOut := FALSE;
+    commands.rockerIn := FALSE;
+    commands.rockerOut := FALSE;
+    commands.magnetCylIn := FALSE;
+    commands.magnetCylOut := FALSE;
+    commands.magnetOn := FALSE;
+    RETURN;
+  END_IF;
+
+  // --- 2. Hardware-Verriegelungen ---
+  
+  // Verhindere Links + Rechts gleichzeitig
+  IF commands.moveLeft AND commands.moveRight THEN
+    commands.moveLeft := FALSE;
+    commands.moveRight := FALSE;
+  END_IF;
+  
+  // Verhindere MM20 Rein + Raus gleichzeitig
+  IF commands.magCylIn AND commands.magCylOut THEN
+    commands.magCylIn := FALSE; // Rein hat Prioritaet
+    commands.magCylOut := FALSE;
+  END_IF;
+  
+  // Verhindere MM30 Rein + Raus gleichzeitig
+  IF commands.rockerIn AND commands.rockerOut THEN
+    commands.rockerIn := FALSE; // Rein hat Prioritaet
+    commands.rockerOut := FALSE;
+  END_IF;
+  
+  // Verhindere MM40 Rein + Raus gleichzeitig
+  IF commands.magnetCylIn AND commands.magnetCylOut THEN
+    commands.magnetCylIn := FALSE; // Rein hat Prioritaet
+    commands.magnetCylOut := FALSE;
+  END_IF;
+  
+  // Die 'commands' (IN_OUT) sind jetzt verriegelt und
+  // werden im OB1 auf die Hardware geschrieben.
+  
+END_FUNCTION_BLOCK

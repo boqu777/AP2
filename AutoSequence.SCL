@@ -1,0 +1,291 @@
+// Library: AP2_SortingStation
+// Tested with: CPU 314C-2 PN/DP
+// Engineering: Step7 v5.6 SP1
+//
+// Functionality: Central state machine (CASE statement) for
+//                the complete automatic sorting sequence.
+//
+// Change log table:
+// Version  Date        Expert in charge  Changes applied
+// 01.00.00 [Date]      (Your Name)       First released version (from SCL-FB500.SCL)
+// 01.01.00 [Date]      (Your Name)       Cleaned interface, fixed ELSIF, 24-char names
+// 01.02.00 [Date]      (Your Name)       Added error stop, currentStep output
+//
+FUNCTION_BLOCK FB500 // AutoSequence
+
+  VAR_INPUT
+    enableAuto : BOOL;            // Freigabe Automatikbetrieb
+    startAuto : BOOL;             // -SJ5 (Starttaster)
+    sensors : "typeSensorInputs"; // UDT1
+    pos1 : INT;                   // Position 1
+    pos2 : INT;                   // Position 2
+  END_VAR
+  
+  VAR_IN_OUT
+    state : "typeMachineState";   // UDT4
+  END_VAR
+  
+  VAR_OUTPUT
+    commands : "typeActorCommands"; // UDT2
+    currentStep : INT;            // Aktuelle Schrittnummer
+  END_VAR
+  
+  VAR // Static
+    statStep : INT := 500;
+    statStepOld : INT;
+    statTimerS504 : TON;
+    statTimerS505 : TON;
+    statTimerS507 : TON;
+    statTimerS507a : TON;
+    statTimerS507b : TON;
+    statTimerS507c : TON;
+    statTimerS508 : TON;
+  END_VAR
+  
+  VAR_TEMP
+    tempStepEdge : BOOL;
+  END_VAR
+  
+  // --- Schritt-Konstanten  ---
+  CONST
+    STEP_INIT := 500;
+    STEP_DETECT_PART := 501;
+    STEP_SET_POS_METAL_HOLE := 502;
+    STEP_SET_POS_PLASTIC := 512;
+    STEP_SET_POS_MET_NOHOLE := 522;
+    STEP_MOVE_TO_POS := 503;
+    STEP_EXTEND_MAG_CYL := 504;
+    STEP_RETRACT_MAG_CYL := 505;
+    STEP_SORT_BRANCH := 506;
+    STEP_EXTEND_ROCKER := 507;
+    STEP_EXTEND_MAGNET_CYL := 517;
+    STEP_RETRACT_MAGNET_CYL := 527;
+    STEP_DEACT_MAG_EXT_ROCKER := 537;
+    STEP_RETRACT_ROCKER := 508;
+    STEP_MOVE_TO_HOME := 509;
+    STEP_WAIT_END := 510;
+  END_CONST
+  
+BEGIN
+
+  // --- 0. Guard Clause (Block nicht aktiv oder Fehler) ---
+  IF NOT enableAuto OR state.errorActive THEN
+    IF NOT enableAuto THEN // Nur bei Moduswechsel Kette resetten
+      statStep := STEP_INIT;
+    END_IF;
+    // Timer zuruecksetzen
+    statTimerS504(IN := FALSE);
+    statTimerS505(IN := FALSE);
+    statTimerS507(IN := FALSE);
+    statTimerS507a(IN := FALSE);
+    statTimerS507b(IN := FALSE);
+    statTimerS507c(IN := FALSE);
+    statTimerS508(IN := FALSE);
+    // Ausgaenge zuruecksetzen
+    commands.moveLeft := FALSE;
+    commands.moveRight := FALSE;
+    commands.magCylIn := FALSE;
+    commands.magCylOut := FALSE;
+    commands.rockerIn := FALSE;
+    commands.rockerOut := FALSE;
+    commands.magnetCylIn := FALSE;
+    commands.magnetCylOut := FALSE;
+    commands.magnetOn := FALSE;
+    // Statusausgang setzen und Baustein verlassen
+    currentStep := statStep;
+    RETURN;
+  END_IF;
+  
+  // --- 1. Flankenauswertung Schrittwechsel ---
+  tempStepEdge := (statStep <> statStepOld);
+  statStepOld := statStep;
+  
+  // --- 2. Grundzustand Ausgaenge (N-Aktionen) ---
+  commands.moveLeft := FALSE;
+  commands.moveRight := FALSE;
+  commands.magCylIn := FALSE;
+  commands.magCylOut := FALSE;
+  commands.rockerIn := FALSE;
+  commands.rockerOut := FALSE;
+  commands.magnetCylIn := FALSE;
+  commands.magnetCylOut := FALSE;
+  commands.magnetOn := FALSE;
+  
+  // --- 3. Schrittkette ---
+  CASE statStep OF
+    
+    // --- S 500: Grundstellung ---
+    STEP_INIT:
+      // L-Aktion: Merker zuruecksetzen
+      IF tempStepEdge THEN
+        state.partIsPlastic := FALSE;
+        state.partIsMetal := FALSE;
+      END_IF;
+      // Transition: Startbedingungen
+      IF (startAuto AND sensors.posEndRight AND sensors.magCylIn AND sensors.rockerIn
+          AND sensors.magnetCylIn AND (sensors.matIsMetal OR NOT sensors.matHasHole)) THEN
+        statStep := STEP_DETECT_PART;
+      END_IF;
+      
+    // --- S 501: Teileerkennung ---
+    STEP_DETECT_PART:
+      IF (sensors.matIsMetal AND sensors.matHasHole) THEN
+        statStep := STEP_SET_POS_METAL_HOLE;
+      ELSE
+        IF (NOT sensors.matIsMetal AND NOT sensors.matHasHole) THEN
+          statStep := STEP_SET_POS_PLASTIC;
+        ELSE
+          IF (sensors.matIsMetal AND NOT sensors.matHasHole) THEN
+            statStep := STEP_SET_POS_MET_NOHOLE;
+          END_IF;
+        END_IF;
+      END_IF;
+      
+    // --- S 502: Ziel "Metall mit Loch" ---
+    STEP_SET_POS_METAL_HOLE:
+      IF tempStepEdge THEN
+        state.targetPosition := pos2;
+      END_IF;
+      statStep := STEP_MOVE_TO_POS;
+      
+    // --- S 512: Ziel "Plastik" ---
+    STEP_SET_POS_PLASTIC:
+      IF tempStepEdge THEN
+        state.targetPosition := pos1;
+        state.partIsPlastic := TRUE;
+      END_IF;
+      statStep := STEP_MOVE_TO_POS;
+      
+    // --- S 522: Ziel "Metall ohne Loch" ---
+    STEP_SET_POS_MET_NOHOLE:
+      IF tempStepEdge THEN
+        state.targetPosition := pos1;
+        state.partIsMetal := TRUE;
+      END_IF;
+      statStep := STEP_MOVE_TO_POS;
+      
+    // --- S 503: Fahre zu Zielposition ---
+    STEP_MOVE_TO_POS:
+      commands.moveLeft := TRUE;
+      // Transition: Position erreicht
+      IF (state.currentPosition >= state.targetPosition) THEN
+        commands.moveLeft := FALSE;
+        statStep := STEP_EXTEND_MAG_CYL;
+      END_IF;
+      
+    // --- S 504: Magazin Zylinder AUSFAHREN ---
+    STEP_EXTEND_MAG_CYL:
+      IF tempStepEdge THEN statTimerS504(IN := FALSE); END_IF;
+      commands.magCylOut := TRUE;
+      statTimerS504(IN := (statStep = STEP_EXTEND_MAG_CYL), PT := T#1s);
+      // Transition: Zeit abgelaufen
+      IF statTimerS504.Q THEN
+        statStep := STEP_RETRACT_MAG_CYL;
+      END_IF;
+      
+    // --- S 505: Magazin Zylinder EINFAHREN ---
+    STEP_RETRACT_MAG_CYL:
+      IF tempStepEdge THEN statTimerS505(IN := FALSE); END_IF;
+      commands.magCylIn := TRUE;
+      statTimerS505(IN := sensors.magCylIn, PT := T#5s);
+      // Transition: Endlage erreicht UND Zeit abgelaufen
+      IF statTimerS505.Q THEN
+        statStep := STEP_SORT_BRANCH;
+      END_IF;
+      
+    // --- S 506: Sortier-Weiche ---
+    STEP_SORT_BRANCH:
+      IF (state.partIsPlastic) THEN
+        statStep := STEP_EXTEND_ROCKER; // Plastik
+      ELSE
+        IF (state.partIsMetal) THEN
+          statStep := STEP_EXTEND_MAGNET_CYL; // Metall o. Loch
+        ELSE
+          IF (state.targetPosition = pos2) THEN
+            statStep := STEP_MOVE_TO_HOME; // Metall m. Loch
+          END_IF;
+        END_IF;
+      END_IF;
+      
+    // --- S 507: Wippe AUSFAHREN (Plastik) ---
+    STEP_EXTEND_ROCKER:
+      IF tempStepEdge THEN statTimerS507(IN := FALSE); END_IF;
+      commands.rockerOut := TRUE;
+      statTimerS507(IN := sensors.rockerOut, PT := T#2s);
+      // Transition: Endlage erreicht UND Zeit abgelaufen
+      IF statTimerS507.Q THEN
+        statStep := STEP_RETRACT_ROCKER;
+      END_IF;
+      
+    // --- S 517: Magnet Zylinder AUSFAHREN (Metall) ---
+    STEP_EXTEND_MAGNET_CYL:
+      IF tempStepEdge THEN statTimerS507a(IN := FALSE); END_IF;
+      commands.magnetCylOut := TRUE;
+      statTimerS507a(IN := sensors.magnetCylOut, PT := T#2s);
+      // Transition: Endlage erreicht UND Zeit abgelaufen
+      IF statTimerS507a.Q THEN
+        statStep := STEP_RETRACT_MAGNET_CYL;
+      END_IF;
+      
+    // --- S 527: Magnet Zylinder EINFAHREN (Metall) ---
+    STEP_RETRACT_MAGNET_CYL:
+      IF tempStepEdge THEN statTimerS507b(IN := FALSE); END_IF;
+      commands.magnetCylIn := TRUE;
+      statTimerS507b(IN := sensors.magnetCylIn, PT := T#2s);
+      // Transition: Endlage erreicht UND Zeit abgelaufen
+      IF statTimerS507b.Q THEN
+        statStep := STEP_DEACT_MAG_EXT_ROCKER;
+      END_IF;
+      
+    // --- S 537: Magnet DEAKTIVIEREN & Wippe AUSFAHREN (Metall) ---
+    STEP_DEACT_MAG_EXT_ROCKER:
+      IF tempStepEdge THEN statTimerS507c(IN := FALSE); END_IF;
+      commands.magnetOn := TRUE; // Schuetz an -> Magnet aus
+      commands.rockerOut := TRUE;
+      statTimerS507c(IN := sensors.rockerOut, PT := T#2s);
+      // Transition: Endlage erreicht UND Zeit abgelaufen
+      IF statTimerS507c.Q THEN
+        statStep := STEP_RETRACT_ROCKER;
+      END_IF;
+      
+    // --- S 508: Wippe EINFAHREN (Sammelschritt) ---
+    STEP_RETRACT_ROCKER:
+      IF tempStepEdge THEN statTimerS508(IN := FALSE); END_IF;
+      commands.rockerIn := TRUE;
+      commands.magnetOn := FALSE; // Schuetz aus -> Magnet an
+      statTimerS508(IN := sensors.rockerIn, PT := T#1s);
+      // Transition: Endlage erreicht UND Zeit abgelaufen
+      IF statTimerS508.Q THEN
+        statStep := STEP_MOVE_TO_HOME;
+      END_IF;
+      
+    // --- S 509: Referenzfahrt (Rechts) ---
+    STEP_MOVE_TO_HOME:
+      commands.moveRight := TRUE;
+      // Transition: Endlage Rechts erreicht
+      IF sensors.posEndRight THEN
+        statStep := STEP_WAIT_END;
+      END_IF;
+      
+    // --- S 510: Warte auf naechsten Zyklus ---
+    STEP_WAIT_END:
+      // Transition 1: Magazin leer?
+      IF (sensors.magCylIn AND NOT sensors.matIsMetal AND sensors.matHasHole) THEN
+        statStep := STEP_INIT;
+      ELSE
+        // Transition 2: Neues Teil liegt an?
+        IF (sensors.magCylIn AND (sensors.matIsMetal OR NOT sensors.matHasHole)) THEN
+          statStep := STEP_DETECT_PART;
+        END_IF;
+      END_IF;
+      
+  ELSE
+    // --- Default / Fehler ---
+    statStep := STEP_INIT;
+    
+  END_CASE; // Ende Schrittkette
+  
+  // --- 4. Statusausgang setzen ---
+  currentStep := statStep;
+  
+END_FUNCTION_BLOCK

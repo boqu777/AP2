@@ -1,0 +1,173 @@
+ORGANIZATION_BLOCK OB1
+  // S7 v5.6 OB1 kann keine statischen VAR-Bloecke enthalten.
+  // Alle Instanzen (z.B. "Instanz_FB0") und Daten ("GlobalData")
+  // muessen als globale DBs im Projekt existieren.
+BEGIN
+
+  // --- 1. READ INPUTS ---
+  // Lese alle Eingaenge in den globalen DB
+  "GlobalData".sensors.btnMoveLeft := "-SJ6";
+  "GlobalData".sensors.btnMoveRight := "-SJ7";
+  "GlobalData".sensors.btnMagCylIn := "-SJ8";
+  "GlobalData".sensors.btnMagCylOut := "-SJ9";
+  "GlobalData".sensors.btnRocker := "-SJ10";
+  "GlobalData".sensors.btnMagnetCyl := "-SJ11";
+  "GlobalData".sensors.btnMagnet := "-SJ12";
+  "GlobalData".sensors.btnStartAuto := "-SJ5";
+  "GlobalData".sensors.notstopOK := "-KE2";
+  "GlobalData".sensors.controlOn := "-SJ3";
+  "GlobalData".sensors.selectorAuto := "-SJ4";
+  "GlobalData".sensors.pressureOK := "-BP1";
+  "GlobalData".sensors.motorProtectionOK := "-FC7";
+  "GlobalData".sensors.posEndLeft := "-BG11";
+  "GlobalData".sensors.posCounter := "-BG12";
+  "GlobalData".sensors.posEndRight := "-BG13";
+  "GlobalData".sensors.magCylIn := "-BG21";
+  "GlobalData".sensors.magCylOut := "-BG22";
+  "GlobalData".sensors.rockerIn := "-BG31";
+  "GlobalData".sensors.rockerOut := "-BG32";
+  "GlobalData".sensors.magnetCylIn := "-BG41";
+  "GlobalData".sensors.magnetCylOut := "-BG42";
+  "GlobalData".sensors.matIsMetal := "-BG51";
+  "GlobalData".sensors.matHasHole := "-BG52";
+  
+  // Positionsdaten sind jetzt direkt in "GlobalData"
+  // Kein Kopieren von DB1 noetig.
+
+  // --- 2. CALL CORE FUNCTIONS ---
+  // (Namen der Instanz-DBs gemaess deiner symbole.csv)
+  
+  "Instanz_FB0"( // DB10
+    notstopOK := "GlobalData".sensors.notstopOK,
+    pressureOK := "GlobalData".sensors.pressureOK,
+    controlOn := "GlobalData".sensors.controlOn,
+    motorProtectionOK := "GlobalData".sensors.motorProtectionOK,
+    selectorAuto := "GlobalData".sensors.selectorAuto,
+    enableSetup => "GlobalData".machineState.enableSetup,
+    enableAuto => "GlobalData".machineState.enableAuto
+  );
+
+  "Instanz_FB100"( // DB100
+    clock1Hz => "GlobalData".machineState.clock1Hz
+  );
+
+  // --- 3. CALL MAIN LOGIC (MANUAL / AUTO) ---
+  "Instanz_FB300"( // DB300
+    enableSetup := "GlobalData".machineState.enableSetup,
+    sensors := "GlobalData".sensors,
+    commands => "GlobalData".manualCmd
+  );
+
+  "Instanz_FB500"( // DB500
+    enableAuto := "GlobalData".machineState.enableAuto,
+    startAuto := "GlobalData".sensors.btnStartAuto,
+    sensors := "GlobalData".sensors,
+    pos1 := "GlobalData".pos1,
+    pos2 := "GlobalData".pos2,
+    state := "GlobalData".machineState, // InOut
+    commands => "GlobalData".autoCmd,
+    currentStep => "GlobalData".autoStep
+  );
+
+  // --- 4. SELECT AND INTERLOCK COMMANDS ---
+  // Mux-Logik (Element-fuer-Element, S7v5.x-konform)
+  IF "GlobalData".machineState.enableAuto THEN
+    "GlobalData".finalCmd.moveLeft := "GlobalData".autoCmd.moveLeft;
+    "GlobalData".finalCmd.moveRight := "GlobalData".autoCmd.moveRight;
+    "GlobalData".finalCmd.magCylIn := "GlobalData".autoCmd.magCylIn;
+    "GlobalData".finalCmd.magCylOut := "GlobalData".autoCmd.magCylOut;
+    "GlobalData".finalCmd.rockerIn := "GlobalData".autoCmd.rockerIn;
+    "GlobalData".finalCmd.rockerOut := "GlobalData".autoCmd.rockerOut;
+    "GlobalData".finalCmd.magnetCylIn := "GlobalData".autoCmd.magnetCylIn;
+    "GlobalData".finalCmd.magnetCylOut := "GlobalData".autoCmd.magnetCylOut;
+    "GlobalData".finalCmd.magnetOn := "GlobalData".autoCmd.magnetOn;
+  ELSE
+    IF "GlobalData".machineState.enableSetup THEN
+      "GlobalData".finalCmd.moveLeft := "GlobalData".manualCmd.moveLeft;
+      "GlobalData".finalCmd.moveRight := "GlobalData".manualCmd.moveRight;
+      "GlobalData".finalCmd.magCylIn := "GlobalData".manualCmd.magCylIn;
+      "GlobalData".finalCmd.magCylOut := "GlobalData".manualCmd.magCylOut;
+      "GlobalData".finalCmd.rockerIn := "GlobalData".manualCmd.rockerIn;
+      "GlobalData".finalCmd.rockerOut := "GlobalData".manualCmd.rockerOut;
+      "GlobalData".finalCmd.magnetCylIn := "GlobalData".manualCmd.magnetCylIn;
+      "GlobalData".finalCmd.magnetCylOut := "GlobalData".manualCmd.magnetCylOut;
+      "GlobalData".finalCmd.magnetOn := "GlobalData".manualCmd.magnetOn;
+    ELSE
+      "GlobalData".finalCmd.moveLeft := FALSE;
+      "GlobalData".finalCmd.moveRight := FALSE;
+      "GlobalData".finalCmd.magCylIn := FALSE;
+      "GlobalData".finalCmd.magCylOut := FALSE;
+      "GlobalData".finalCmd.rockerIn := FALSE;
+      "GlobalData".finalCmd.rockerOut := FALSE;
+      "GlobalData".finalCmd.magnetCylIn := FALSE;
+      "GlobalData".finalCmd.magnetCylOut := FALSE;
+      "GlobalData".finalCmd.magnetOn := FALSE;
+    END_IF;
+  END_IF;
+  
+  // Rufe FB600 auf (Symbol "DB600" fuer Instanz)
+  "DB600"( // DB600
+    commands := "GlobalData".finalCmd, // InOut
+    errorActive := "GlobalData".machineState.errorActive
+  );
+
+  // --- 5. CALL DIAGNOSIS & DEPENDENT FUNCTIONS ---
+  
+  // Rufe FB700 auf (Annahme: Instanz DB700 "Instanz_FB_Diag")
+  "Instanz_FB_Diag"( // DB700 (Annahme)
+    sensors := "GlobalData".sensors,
+    commands := "GlobalData".finalCmd,
+    monitorTimeout := T#5s,
+    reset := "GlobalData".sensors.controlOn, // Auto-Reset
+    state := "GlobalData".machineState // InOut
+  );
+  
+  // Rufe FB1 auf (Symbol "Positionserfassung_DB" fuer Instanz)
+  "Positionserfassung_DB"( // DB11
+    sensorCounter := "GlobalData".sensors.posCounter,
+    cmdMoveLeft := "GlobalData".finalCmd.moveLeft,
+    cmdMoveRight := "GlobalData".finalCmd.moveRight,
+    sensorRefPos := "GlobalData".sensors.posEndRight,
+    position := "GlobalData".machineState.currentPosition // InOut
+  );
+
+  // Rufe FB200 auf (Symbol "Anzeige_DB" fuer Instanz)
+  "Anzeige_DB"( // DB200
+    sensors := "GlobalData".sensors,
+    state := "GlobalData".machineState,
+    actors := "GlobalData".finalCmd,
+    pos1 := "GlobalData".pos1,
+    pos2 := "GlobalData".pos2,
+    pos3 := "GlobalData".pos3,
+    pos4 := "GlobalData".pos4,
+    lights => "GlobalData".lights
+  );
+
+  // --- 6. WRITE OUTPUTS ---
+  // Schreibe finale, verriegelte Befehle auf Hardware
+  
+  "-QA5" := "GlobalData".finalCmd.moveLeft;
+  "-QA6" := "GlobalData".finalCmd.moveRight;
+  "-MB21" := "GlobalData".finalCmd.magCylIn;
+  "-MB22" := "GlobalData".finalCmd.magCylOut;
+  "-MB31" := "GlobalData".finalCmd.rockerIn;
+  "-MB32" := "GlobalData".finalCmd.rockerOut;
+  "-MB41" := "GlobalData".finalCmd.magnetCylIn;
+  "-MB42" := "GlobalData".finalCmd.magnetCylOut;
+  "-QA61" := "GlobalData".finalCmd.magnetOn;
+
+  "-PF6" := "GlobalData".lights.lightMoveLeft;
+  "-PF7" := "GlobalData".lights.lightMoveRight;
+  "-PF8" := "GlobalData".lights.lightPosReached;
+  "-PF10" := "GlobalData".lights.lightMagCylIn;
+  "-PF11" := "GlobalData".lights.lightMagCylOut;
+  "-PF12" := "GlobalData".lights.lightRockerIn;
+  "-PF14" := "GlobalData".lights.lightMagnetCylIn;
+  "-PF32" := "GlobalData".lights.lightMagEmpty;
+  "-PF33" := "GlobalData".lights.lightMagnetOff;
+  "-PF2" := "GlobalData".lights.lightHomePos;
+  "-PF3S" := "GlobalData".lights.lightMode; // Symbol -PF3 heisst -PF3S in symbole.csv
+  "-PF4" := "GlobalData".lights.lightPressureOK;
+  "-PF5" := "GlobalData".lights.lightMotorError;
+
+END_ORGANIZATION_BLOCK

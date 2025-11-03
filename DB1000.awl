@@ -1,22 +1,37 @@
+// Library: AP2_SortingStation
+// Tested with: CPU 314C-2 PN/DP
+// Engineering: Step7 v5.6 SP1
+//
+// Functionality: Central data storage for the entire application.
+//                Holds all UDT instances and configuration data.
+//                This DB replaces all global markers.
+//
+// Change log table:
+// Version  Date            Expert in charge        Changes applied
+// 01.00.00 [03.11.25]      (Boris Quade)           First released version
+
+
+
+
 DATA_BLOCK DB1000
 TITLE = GlobalData
   STRUCT
-    // UDT-Instanzen
-    sensors      : "typeSensorInputs";  // UDT1
-    manualCmd    : "typeActorCommands"; // UDT2
-    autoCmd      : "typeActorCommands"; // UDT2
-    finalCmd     : "typeActorCommands"; // UDT2
-    lights       : "typeLightOutputs";  // UDT3
-    machineState : "typeMachineState";  // UDT4
+    
+    sensors      : "typeSensorInputs";  // UDT1: All physical inputs
+    manualCmd    : "typeActorCommands"; // UDT2: Commands from FManualMode
+    autoCmd      : "typeActorCommands"; // UDT2: Commands from AutoSequence
+    finalCmd     : "typeActorCommands"; // UDT2: Interlocked commands for HW
+    lights       : "typeLightOutputs";  // UDT3: Commands for Indicator lights
+    machineState : "typeMachineState";  // UDT4: Central state info
 
-    // Positionen)
+    
     Pos1 : INT  := 78;	//Ablagepostion Kunststoffteile und Metallteile ohne Bohrung
     Pos2 : INT  := 53;	//Ablageposition Metallteile mit Bohrung
     Pos3 : INT  := 31;	//Reserve Position
     Pos4 : INT  := 6;	//Reserve Position
     
-    // Status
-    autoStep     : INT; // Aktueller Schritt FB500
+    
+    autoStep     : INT; // Current step number from FB500 AutoSequence
   END_STRUCT
 
 BEGIN

@@ -1,0 +1,62 @@
+// Library: AP2_SortingStation
+// Tested with: CPU 314C-2 PN/DP
+// Engineering: Step7 v5.6 SP1
+//
+// Functionality: Manages the X-axis position counter.
+//                Counts up/down based on encoder (-BG12) and
+//                travel direction. Resets at reference switch (-BG13).
+//
+// Change log table:
+// Version  Date        Expert in charge  Changes applied
+// 01.00.00 [Date]      (Your Name)       First released version (from SCL-FB1.SCL)
+//
+FUNCTION_BLOCK FB1 // PositionTracking
+
+  VAR_INPUT
+    sensorCounter : BOOL; // -BG12: X-Axis position encoder
+    cmdMoveLeft : BOOL;   // Final command "Move Left"
+    cmdMoveRight : BOOL;  // Final command "Move Right"
+    sensorRefPos : BOOL;  // -BG13: X-Axis reference switch
+  END_VAR
+  
+  VAR_IN_OUT
+    position : INT;       // Current position (from GlobalData.machineState)
+  END_VAR
+  
+  VAR // Static
+    statSensorOld : BOOL; // Edge detection memory for -BG12
+  END_VAR
+  
+  VAR_TEMP
+    tempEdge : BOOL;      // Rising edge of sensorCounter
+  END_VAR
+  
+BEGIN
+
+  // --- 1. Flankenauswertung Inkrementalgeber ---
+  tempEdge := (sensorCounter AND NOT statSensorOld);
+  statSensorOld := sensorCounter;
+  
+  // --- 2. Zaehllogik (Richtungsabhaengig) ---
+  IF tempEdge THEN
+    
+    // Bei Linksfahrt (cmdMoveLeft), aufwaerts zaehlen
+    IF cmdMoveLeft AND (position < 999) THEN
+      position := position + 1;
+      
+    ELSE
+      // Bei Rechtsfahrt (cmdMoveRight), abwaerts zaehlen
+      IF cmdMoveRight AND (position > 0) THEN
+        position := position - 1;
+      END_IF;
+    END_IF;
+    
+  END_IF;
+
+  // --- 3. Referenzierung (Grundstellung) ---
+  // Setzt Zaehler auf 0, wenn Endlage Rechts (-BG13) erreicht ist.
+  IF sensorRefPos THEN
+    position := 0;
+  END_IF;
+
+END_FUNCTION_BLOCK

@@ -1,0 +1,119 @@
+// Library: AP2_SortingStation
+// Tested with: CPU 314C-2 PN/DP
+// Engineering: Step7 v5.6 SP1
+//
+// Functionality: Controls all manual actuator movements in jog mode.
+//                Only active when 'enableSetup' is TRUE.
+//
+// Change log table:
+// Version  Date        Expert in charge  Changes applied
+// 01.00.00 [Date]      (Your Name)       First released version (from SCL_FB300.SCL)
+// 01.01.00 [Date]      (Your Name)       Cleaned interface (UDTs), fixed ELSIF
+//
+FUNCTION_BLOCK FB300 // ManualMode
+
+  VAR_INPUT
+    enableSetup : BOOL;           // Freigabe Einrichtbetrieb
+    sensors : "typeSensorInputs"; // UDT1
+  END_VAR
+  
+  VAR_OUTPUT
+    commands : "typeActorCommands"; // UDT2
+  END_VAR
+  
+  VAR // Static
+    statTimerMagnet : TP; // Nachlaufzeit Magnet (5s)
+  END_VAR
+  
+BEGIN
+
+  // --- 0. Guard Clause (Block nicht aktiv) ---
+  IF NOT enableSetup THEN
+    commands.moveLeft := FALSE;
+    commands.moveRight := FALSE;
+    commands.magCylIn := FALSE;
+    commands.magCylOut := FALSE;
+    commands.rockerIn := FALSE;
+    commands.rockerOut := FALSE;
+    commands.magnetCylIn := FALSE;
+    commands.magnetCylOut := FALSE;
+    commands.magnetOn := FALSE;
+    statTimerMagnet(IN := FALSE);
+    RETURN;
+  END_IF;
+
+  // --- 1. EINRICHTBETRIEB AKTIV ---
+
+  // --- X-Achse (SR-Logik) ---
+  IF (sensors.btnMoveLeft AND NOT sensors.btnMoveRight AND NOT sensors.posEndLeft AND NOT commands.moveRight) THEN
+    commands.moveLeft := TRUE;
+  ELSE
+    IF sensors.posEndLeft OR (sensors.btnMoveRight AND NOT sensors.btnMoveLeft) THEN
+      commands.moveLeft := FALSE;
+    END_IF;
+  END_IF;
+
+  IF (sensors.btnMoveRight AND NOT sensors.btnMoveLeft AND NOT sensors.posEndRight AND NOT commands.moveLeft) THEN
+    commands.moveRight := TRUE;
+  ELSE
+    IF sensors.posEndRight OR (sensors.btnMoveLeft AND NOT sensors.btnMoveRight) THEN
+      commands.moveRight := FALSE;
+    END_IF;
+  END_IF;
+
+  // --- Zylinder MM20 (Magazin) (SR-Logik) ---
+  IF (sensors.btnMagCylIn AND NOT sensors.btnMagCylOut AND NOT sensors.magCylIn) THEN
+    commands.magCylIn := TRUE;
+  ELSE
+    IF sensors.magCylIn OR (sensors.btnMagCylOut AND NOT sensors.btnMagCylIn) THEN
+      commands.magCylIn := FALSE;
+    END_IF;
+  END_IF;
+
+  IF (sensors.btnMagCylOut AND NOT sensors.btnMagCylIn AND NOT sensors.magCylOut) THEN
+    commands.magCylOut := TRUE;
+  ELSE
+    IF sensors.magCylOut OR (sensors.btnMagCylIn AND NOT sensors.btnMagCylOut) THEN
+      commands.magCylOut := FALSE;
+    END_IF;
+  END_IF;
+
+  // --- Zylinder MM30 (Wippe) (Tipp-Betrieb) ---
+  IF (NOT sensors.btnRocker) THEN // Einfahren
+    commands.rockerIn := TRUE;
+  ELSE
+    IF sensors.rockerIn THEN
+      commands.rockerIn := FALSE;
+    END_IF;
+  END_IF;
+
+  IF (sensors.btnRocker AND NOT sensors.rockerOut) THEN // Taster -> Ausfahren
+    commands.rockerOut := TRUE;
+  ELSE
+    IF sensors.rockerOut OR (NOT sensors.btnRocker) THEN
+      commands.rockerOut := FALSE;
+    END_IF;
+  END_IF;
+
+  // --- Zylinder MM40 (Magnet) (Tipp-Betrieb) ---
+  IF (NOT sensors.btnMagnetCyl) THEN //Einfahren
+    commands.magnetCylIn := TRUE;
+  ELSE
+    IF sensors.magnetCylIn THEN
+      commands.magnetCylIn := FALSE;
+    END_IF;
+  END_IF;
+
+  IF (sensors.btnMagnetCyl AND NOT sensors.magnetCylOut) THEN // Taster  -> Ausfahren
+    commands.magnetCylOut := TRUE;
+  ELSE
+    IF sensors.magnetCylOut OR (NOT sensors.btnMagnetCyl) THEN
+      commands.magnetCylOut := FALSE;
+    END_IF;
+  END_IF;
+
+  // --- Magnet -QA61 (TP-Timer) ---
+  statTimerMagnet(IN := sensors.btnMagnet, PT := T#5s);
+  commands.magnetOn := statTimerMagnet.Q;
+
+END_FUNCTION_BLOCK

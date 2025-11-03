@@ -1,0 +1,155 @@
+// Library: AP2_SortingStation
+// Tested with: CPU 314C-2 PN/DP
+// Engineering: Step7 v5.6 SP1
+//
+// Functionality: Central diagnosis and error detection.
+//                Monitors critical inputs (E-Stop), sensor mismatches
+//                (e.g., IN and OUT active), and process timeouts.
+//
+// Change log table:
+// Version  Date        Expert in charge  Changes applied
+// 01.00.00 [Date]      (Your Name)       First released version
+//
+FUNCTION_BLOCK FB700 // FB_Diagnosis
+
+  VAR_INPUT
+    sensors : "typeSensorInputs";  // UDT1
+    commands : "typeActorCommands"; // UDT2 (Final interlocked commands)
+    monitorTimeout : TIME := T#5s;  // Allgemeine Zeitueberwachung
+    reset : BOOL;                   // Fehler-Reset
+  END_VAR
+  
+  VAR_IN_OUT
+    state : "typeMachineState";     // UDT4
+  END_VAR
+  
+  VAR // Static
+    statLatchedErrorCode : INT;
+    statTimerMagOut : TON;
+    statTimerMagIn : TON;
+    statTimerRockerOut : TON;
+    statTimerRockerIn : TON;
+    statTimerMagPistOut : TON;
+    statTimerMagPistIn : TON;
+  END_VAR
+  
+  VAR_TEMP
+    tempCurrentError : INT;
+  END_VAR
+
+  // --- Fehler-Konstanten ---
+  CONST
+    ERR_NONE := 0;
+    ERR_ESTOP := 100;
+    ERR_PRESSURE := 110;
+    ERR_MOTOR := 111;
+    ERR_SNS_MAG_CYL := 201;
+    ERR_SNS_ROCKER := 202;
+    ERR_SNS_MAG_PISTON := 203;
+    ERR_TIMEOUT_MAG_OUT := 303;
+    ERR_TIMEOUT_MAG_IN := 304;
+    ERR_TIMEOUT_ROCKER_OUT := 305;
+    ERR_TIMEOUT_ROCKER_IN := 306;
+    ERR_TIMEOUT_MAGPIS_OUT := 307;
+    ERR_TIMEOUT_MAGPIS_IN := 308;
+    WARN_START_NOT_HOME := 10;
+  END_CONST
+  
+BEGIN
+
+  // --- 0. Reset Logik ---
+  IF reset THEN
+    statLatchedErrorCode := ERR_NONE;
+  END_IF;
+
+  // --- 1. Fehler-Speicher ---
+  // Wenn ein Fehler gespeichert ist, keine neuen Pruefungen durchfuehren.
+  IF statLatchedErrorCode <> ERR_NONE THEN
+    state.errorActive := TRUE;
+    state.errorCode := statLatchedErrorCode;
+    state.warningCode := 0;
+    
+    // Timer stoppen
+    statTimerMagOut(IN := FALSE);
+    statTimerMagIn(IN := FALSE);
+    statTimerRockerOut(IN := FALSE);
+    statTimerRockerIn(IN := FALSE);
+    statTimerMagPistOut(IN := FALSE);
+    statTimerMagPistIn(IN := FALSE);
+    RETURN;
+  END_IF;
+
+  // --- 2. Grundzustand ---
+  state.errorActive := FALSE;
+  state.errorCode := ERR_NONE;
+  state.warningCode := 0;
+  tempCurrentError := ERR_NONE;
+
+  // --- 3. Prio 1: Kritische Fehler (NOT-AUS, Druck, Motor) ---
+  IF NOT sensors.notstopOK THEN
+    tempCurrentError := ERR_ESTOP;
+  ELSE
+    IF sensors.controlOn AND (NOT sensors.pressureOK) THEN
+      tempCurrentError := ERR_PRESSURE;
+    ELSE
+      IF sensors.controlOn AND (NOT sensors.motorProtectionOK) THEN
+        tempCurrentError := ERR_MOTOR;
+      END_IF;
+    END_IF;
+  END_IF;
+
+  // --- 4. Prio 2: Sensor-Konflikte (Hardware) ---
+  IF tempCurrentError = ERR_NONE THEN
+    IF (sensors.magCylIn AND sensors.magCylOut) THEN
+      tempCurrentError := ERR_SNS_MAG_CYL;
+    ELSE
+      IF (sensors.rockerIn AND sensors.rockerOut) THEN
+        tempCurrentError := ERR_SNS_ROCKER;
+      ELSE
+        IF (sensors.magnetCylIn AND sensors.magnetCylOut) THEN
+          tempCurrentError := ERR_SNS_MAG_PISTON;
+        END_IF;
+      END_IF;
+    END_IF;
+  END_IF;
+
+  // --- 5. Prio 3: Zeitueberwachungen (Prozess) ---
+  IF tempCurrentError = ERR_NONE THEN
+    // MM20 Aus
+    statTimerMagOut(IN := (commands.magCylOut AND NOT sensors.magCylOut), PT := monitorTimeout);
+    IF statTimerMagOut.Q THEN tempCurrentError := ERR_TIMEOUT_MAG_OUT; END_IF;
+    // MM20 Ein
+    statTimerMagIn(IN := (commands.magCylIn AND NOT sensors.magCylIn), PT := monitorTimeout);
+    IF statTimerMagIn.Q THEN tempCurrentError := ERR_TIMEOUT_MAG_IN; END_IF;
+    // MM30 Aus
+    statTimerRockerOut(IN := (commands.rockerOut AND NOT sensors.rockerOut), PT := monitorTimeout);
+    IF statTimerRockerOut.Q THEN tempCurrentError := ERR_TIMEOUT_ROCKER_OUT; END_IF;
+    // MM30 Ein
+    statTimerRockerIn(IN := (commands.rockerIn AND NOT sensors.rockerIn), PT := monitorTimeout);
+    IF statTimerRockerIn.Q THEN tempCurrentError := ERR_TIMEOUT_ROCKER_IN; END_IF;
+    // MM40 Aus
+    statTimerMagPistOut(IN := (commands.magnetCylOut AND NOT sensors.magnetCylOut), PT := monitorTimeout);
+    IF statTimerMagPistOut.Q THEN tempCurrentError := ERR_TIMEOUT_MAGPIS_OUT; END_IF;
+    // MM40 Ein
+    statTimerMagPistIn(IN := (commands.magnetCylIn AND NOT sensors.magnetCylIn), PT := monitorTimeout);
+    IF statTimerMagPistIn.Q THEN tempCurrentError := ERR_TIMEOUT_MAGPIS_IN; END_IF;
+  END_IF;
+  
+  // --- 6. Fehler speichern ---
+  IF tempCurrentError <> ERR_NONE THEN
+    statLatchedErrorCode := tempCurrentError;
+    state.errorActive := TRUE;
+    state.errorCode := statLatchedErrorCode;
+  END_IF;
+
+  // --- 7. Warnungen (nicht-speichernd) ---
+  IF NOT state.errorActive THEN
+    // Warnung: Start gedrueckt, aber nicht in Grundstellung
+    IF state.enableAuto AND sensors.btnStartAuto AND 
+       (NOT sensors.posEndRight OR NOT sensors.magCylIn OR NOT sensors.rockerIn OR NOT sensors.magnetCylIn)
+    THEN
+      state.warningCode := WARN_START_NOT_HOME;
+    END_IF;
+  END_IF;
+  
+END_FUNCTION_BLOCK

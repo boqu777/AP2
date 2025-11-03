@@ -1,0 +1,108 @@
+// Library: AP2_SortingStation
+// Tested with: CPU 314C-2 PN/DP
+// Engineering: Step7 v5.6 SP1
+//
+// Functionality: Controls all indicator lights based on machine state.
+//
+// Change log table:
+// Version  Date        Expert in charge  Changes applied
+// 01.00.00 [Date]      (Your Name)       First released version (from SCL-FB200.SCL)
+// 01.01.00 [Date]      (Your Name)       Cleaned interface (UDTs), fixed ELSIF
+//
+FUNCTION_BLOCK FB200 // IndicatorControl
+
+  VAR_INPUT
+    sensors : "typeSensorInputs";  // UDT1
+    state : "typeMachineState";    // UDT4
+    actors : "typeActorCommands";  // UDT2 (Final interlocked commands)
+    
+    // Positions
+    pos1 : INT;
+    pos2 : INT;
+    pos3 : INT;
+    pos4 : INT;
+  END_VAR
+  
+  VAR_OUTPUT
+    lights : "typeLightOutputs";   // UDT3
+  END_VAR
+
+BEGIN
+  
+  // --- 1. NOT-AUS oder Steuerung AUS ---
+  IF NOT sensors.notstopOK OR NOT sensors.controlOn THEN
+    lights.lightHomePos := FALSE;
+    lights.lightMode := FALSE;
+    lights.lightPressureOK := FALSE;
+    lights.lightMotorError := FALSE;
+    lights.lightMoveLeft := FALSE;
+    lights.lightMoveRight := FALSE;
+    lights.lightPosReached := FALSE;
+    lights.lightMagCylIn := FALSE;
+    lights.lightMagCylOut := FALSE;
+    lights.lightRockerIn := FALSE;
+    lights.lightMagnetCylIn := FALSE;
+    lights.lightMagEmpty := FALSE;
+    lights.lightMagnetOff := FALSE;
+    RETURN;
+  END_IF;
+
+  // --- 2. Normale Anzeigen ---
+  
+  // -PF2: Grundstellungsanzeige
+  lights.lightHomePos := (sensors.posEndRight AND sensors.magCylIn 
+                      AND sensors.rockerIn AND sensors.magnetCylIn 
+                      AND NOT actors.magnetOn);
+
+  // -PF3S: Betriebszustand
+  IF state.enableSetup THEN
+    lights.lightMode := TRUE; // Setup = Dauerlicht
+  ELSE
+    IF state.enableAuto THEN
+      IF state.errorActive THEN
+        lights.lightMode := TRUE; // Fehler = Dauerlicht (oder schneller Takt)
+      ELSE
+        lights.lightMode := state.clock1Hz; // Auto = Blinken
+      END_IF;
+    ELSE
+      lights.lightMode := FALSE; // Kein Modus = AUS
+    END_IF;
+  END_IF;
+
+  // -PF4: Druck OK
+  lights.lightPressureOK := sensors.pressureOK;
+
+  // -PF5: Motorstoerung
+  lights.lightMotorError := NOT sensors.motorProtectionOK;
+
+  // -PF6: Linksfahrt
+  lights.lightMoveLeft := (actors.moveLeft AND state.clock1Hz);
+
+  // -PF7: Rechtsfahrt
+  lights.lightMoveRight := (actors.moveRight AND state.clock1Hz);
+
+  // -PF8: Position erreicht
+  lights.lightPosReached := (state.currentPosition = pos1) 
+                         OR (state.currentPosition = pos2) 
+                         OR (state.currentPosition = pos3) 
+                         OR (state.currentPosition = pos4);
+
+  // -PF10: Magazin Zylinder eingefahren
+  lights.lightMagCylIn := sensors.magCylIn;
+
+  // -PF11: Magazin Zylinder ausgefahren
+  lights.lightMagCylOut := sensors.magCylOut;
+
+  // -PF12: Wippe Zylinder eingefahren
+  lights.lightRockerIn := sensors.rockerIn;
+
+  // -PF14: Magnet Zylinder eingefahren
+  lights.lightMagnetCylIn := sensors.magnetCylIn;
+
+  // -PF32: Magazin leer
+  lights.lightMagEmpty := (NOT sensors.matIsMetal AND sensors.matHasHole);
+
+  // -PF33: Magnet AUS
+  lights.lightMagnetOff := actors.magnetOn; // (Invertierte Logik)
+
+END_FUNCTION_BLOCK
