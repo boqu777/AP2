@@ -9,9 +9,6 @@
 
 FUNCTION_BLOCK FB300 // Einrichtbetrieb (Handbetrieb)
 
-VAR_INPUT
-  Einrichtbetrieb : BOOL; // Eingang: TRUE, wenn Einrichtbetrieb gewaehlt ist.
-END_VAR
 
 VAR
   // Interne Variablen des FBs
@@ -22,78 +19,91 @@ BEGIN // Start der FB300-Logik
   
   // --- 0. SCHUTZBEDINGUNG (Guard Clause) ---
   // Prueft, ob der Baustein ueberhaupt aktiv sein soll.
-  IF Einrichtbetrieb THEN
+  
+  
+  
+  
+  
+  IF "dbGlobal".Betriebsart.Einrichten THEN
     
-    
-     // --- HANDBETRIEB AKTIV ---
+      "dbGlobal".Steuer_Hand.MB21_Ein    := FALSE;
+      "dbGlobal".Steuer_Hand.MB22_Aus    := FALSE;
+      "dbGlobal".Steuer_Hand.MB31_Ein    := FALSE;
+      "dbGlobal".Steuer_Hand.MB32_Aus    := FALSE;
+      "dbGlobal".Steuer_Hand.MB41_Ein    := FALSE;
+      "dbGlobal".Steuer_Hand.MB42_Aus    := FALSE;
+      "dbGlobal".Steuer_Hand.QA5_Links   := FALSE;
+      "dbGlobal".Steuer_Hand.QA6_Rechts  := FALSE;
+      "dbGlobal".Steuer_Hand.QA61_Magnet := FALSE;
+    // --- HANDBETRIEB AKTIV ---
     
     // -- Steuerung X-Achse (SR-Logik mit Vorrang Reset) --
-    // (Der FB1 im OB1 wertet sig_QA5/QA6 aus und zaehlt "Position")
-    IF ("-SJ6" AND NOT "-SJ7" AND NOT "-BG11" AND NOT sig_QA6) THEN
-      sig_QA5 := TRUE;
+    
+    IF ("-SJ6" AND NOT "-SJ7" AND NOT "-BG11" AND NOT "dbGlobal".Steuer_Hand.QA6_Rechts) THEN
+      "dbGlobal".Steuer_Hand._QA5_Links := TRUE;
     ELSIF "-BG11" OR ("-SJ7" AND NOT "-SJ6") THEN 
-      sig_QA5 := FALSE;
+      "dbGlobal".Steuer_Hand._QA5_Links := FALSE;
     END_IF;
-    IF ("-SJ7" AND NOT "-SJ6" AND NOT "-BG13" AND NOT sig_QA5) THEN
-      sig_QA6 := TRUE;
+    IF ("-SJ7" AND NOT "-SJ6" AND NOT "-BG13" AND NOT "dbGlobal".Steuer_Hand._QA5_Links) THEN
+      "dbGlobal".Steuer_Hand.QA6_Rechts := TRUE;
     ELSIF "-BG13" OR ("-SJ6" AND NOT "-SJ7") THEN
-      sig_QA6 := FALSE;
+      "dbGlobal".Steuer_Hand.QA6_Rechts := FALSE;
     END_IF;
     
     // -- Steuerung Zylinder MM20 (Magazin) (SR-Logik) --
     IF ("-SJ8" AND NOT "-SJ9" AND NOT "-BG21") THEN // Einfahren
-      sig_MB21 := TRUE;
+      "dbGlobal".Steuer_Hand.MB21_Ein := TRUE;
     ELSIF "-BG21" OR ("-SJ9" AND NOT "-SJ8") THEN
-      sig_MB21 := FALSE;
+      "dbGlobal".Steuer_Hand.MB21_Ein := FALSE;
     END_IF;
     IF ("-SJ9" AND NOT "-SJ8" AND NOT "-BG22") THEN // Ausfahren
-      sig_MB22 := TRUE;
+      "dbGlobal".Steuer_Hand.MB22_Aus := TRUE;
     ELSIF "-BG22" OR ("-SJ8" AND NOT "-SJ9") THEN
-      sig_MB22 := FALSE;
+      "dbGlobal".Steuer_Hand.MB22_Aus := FALSE;
     END_IF;
     
     // -- Steuerung Zylinder MM30 (Wippe) (Selbsthaltung) --
     IF (NOT "-SJ10") THEN // Taster nach unten -> Einfahren
-      sig_MB31 := TRUE;
+      "dbGlobal".Steuer_Hand.MB31_Ein := TRUE;
     ELSIF "-BG31" THEN // Endlage erreicht -> Ruecksetzen
-      sig_MB31 := FALSE;
+      "dbGlobal".Steuer_Hand.MB31_Ein := FALSE;
     END_IF;
     IF ("-SJ10" AND NOT "-BG32") THEN // Taster nach oben -> Ausfahren
-      sig_MB32 := TRUE;
+      "dbGlobal".Steuer_Hand.MB32_Aus := TRUE;
     ELSIF "-BG32" OR (NOT "-SJ10") THEN // Endlage ODER Taster losgelassen
-      sig_MB32 := FALSE;
+      "dbGlobal".Steuer_Hand.MB32_Aus := FALSE;
     END_IF;
 
     // -- Steuerung Zylinder MM40 (Magnet) (Selbsthaltung) --
     IF (NOT "-SJ11") THEN // Taster nach unten -> Einfahren
-      sig_MB41 := TRUE;
+      "dbGlobal".Steuer_Hand.MB41_Ein := TRUE;
     ELSIF "-BG41" THEN // Endlage erreicht -> Ruecksetzen
-      sig_MB41 := FALSE;
+      "dbGlobal".Steuer_Hand.MB41_Ein := FALSE;
     END_IF;
     IF ("-SJ11" AND NOT "-BG42") THEN // Taster nach oben -> Ausfahren
-      sig_MB42 := TRUE;
+      "dbGlobal".Steuer_Hand.MB42_Aus := TRUE;
     ELSIF "-BG42" OR (NOT "-SJ11") THEN // Endlage ODER Taster losgelassen
-      sig_MB42 := FALSE;
+      "dbGlobal".Steuer_Hand.MB42_Aus := FALSE;
     END_IF;
 
-    // -- Steuerung Magnet-Schuetz QA61 (mit TOF-Timer) --
-    // Magnet (sig_QA61) ist aus, wenn SJ12 gedrueckt wird.
+    // -- Steuerung Magnet-Schuetz QA61 (mit TP-Timer) --
+    // Magnet ist aus, wenn SJ12 gedrueckt wird.
     // Wenn SJ12 losgelassen wird, bleibt er noch 5s aus.
     TIMER_QA61(IN := "-SJ12", PT := T#5s);
-    sig_QA61 := TIMER_QA61.Q;
+    "dbGlobal".Steuer_Hand.QA61_Magnet := TIMER_QA61.Q;
 
   ELSE
     // --- BAUSTEIN NICHT AKTIV ---
     // Alle Ausgaenge zuruecksetzen, wenn Einrichtbetrieb beendet wird.
-    sig_QA5  := FALSE;
-    sig_MB22 := FALSE;
-    sig_MB21 := FALSE;
-    sig_MB31 := FALSE;
-    sig_MB32 := FALSE;
-    sig_MB41 := FALSE;
-    sig_MB42 := FALSE;
-    sig_QA61 := FALSE;
-    sig_QA6  := FALSE;
+      "dbGlobal".Steuer_Hand.MB21_Ein    := FALSE;
+      "dbGlobal".Steuer_Hand.MB22_Aus    := FALSE;
+      "dbGlobal".Steuer_Hand.MB31_Ein    := FALSE;
+      "dbGlobal".Steuer_Hand.MB32_Aus    := FALSE;
+      "dbGlobal".Steuer_Hand.MB41_Ein    := FALSE;
+      "dbGlobal".Steuer_Hand.MB42_Aus    := FALSE;
+      "dbGlobal".Steuer_Hand.QA5_Links   := FALSE;
+      "dbGlobal".Steuer_Hand.QA6_Rechts  := FALSE;
+      "dbGlobal".Steuer_Hand.QA61_Magnet := FALSE; // Standard: Magnet AN (siehe Timer-Logik)
 
     // Timer ebenfalls zuruecksetzen
     TIMER_QA61(IN := FALSE);

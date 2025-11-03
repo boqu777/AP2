@@ -1,0 +1,15 @@
+TYPE UDT4 //"typeMachineState"
+  VERSION : '1.0'
+  STRUCT
+    enableSetup : BOOL;
+    enableAuto : BOOL;
+    clock1Hz : BOOL;
+    currentPosition : INT;
+    targetPosition : INT;
+    partIsPlastic : BOOL;
+    partIsMetal : BOOL;
+    errorActive : BOOL;
+    errorCode : INT;
+    warningCode : INT;
+  END_STRUCT
+END_TYPE

@@ -1,0 +1,18 @@
+TYPE UDT3
+  VERSION : '1.0'
+  STRUCT
+    lightHomePos : BOOL;
+    lightMode : BOOL;
+    lightPressureOK : BOOL;
+    lightMotorError : BOOL;
+    lightMoveLeft : BOOL;
+    lightMoveRight : BOOL;
+    lightPosReached : BOOL;
+    lightMagCylIn : BOOL;
+    lightMagCylOut : BOOL;
+    lightRockerIn : BOOL;
+    lightMagnetCylIn : BOOL;
+    lightMagEmpty : BOOL;
+    lightMagnetOff : BOOL;
+  END_STRUCT
+END_TYPE

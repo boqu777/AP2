@@ -1,0 +1,29 @@
+TYPE UDT1
+  VERSION : '1.0'
+  STRUCT
+    btnMoveLeft : BOOL;
+    btnMoveRight : BOOL;
+    btnMagCylIn : BOOL;
+    btnMagCylOut : BOOL;
+    btnRocker : BOOL;
+    btnMagnetCyl : BOOL;
+    btnMagnet : BOOL;
+    btnStartAuto : BOOL;
+    notstopOK : BOOL;
+    controlOn : BOOL;
+    selectorAuto : BOOL;
+    pressureOK : BOOL;
+    motorProtectionOK : BOOL;
+    posEndLeft : BOOL;
+    posCounter : BOOL;
+    posEndRight : BOOL;
+    magCylIn : BOOL;
+    magCylOut : BOOL;
+    rockerIn : BOOL;
+    rockerOut : BOOL;
+    magnetCylIn : BOOL;
+    magnetCylOut : BOOL;
+    matIsMetal : BOOL;
+    matHasHole : BOOL;
+  END_STRUCT
+END_TYPE

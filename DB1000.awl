@@ -1,0 +1,23 @@
+DATA_BLOCK DB1000
+TITLE = GlobalData
+  STRUCT
+    // UDT-Instanzen
+    sensors      : "typeSensorInputs";  // UDT1
+    manualCmd    : "typeActorCommands"; // UDT2
+    autoCmd      : "typeActorCommands"; // UDT2
+    finalCmd     : "typeActorCommands"; // UDT2
+    lights       : "typeLightOutputs";  // UDT3
+    machineState : "typeMachineState";  // UDT4
+
+    // Positionen)
+    Pos1 : INT  := 78;	//Ablagepostion Kunststoffteile und Metallteile ohne Bohrung
+    Pos2 : INT  := 53;	//Ablageposition Metallteile mit Bohrung
+    Pos3 : INT  := 31;	//Reserve Position
+    Pos4 : INT  := 6;	//Reserve Position
+    
+    // Status
+    autoStep     : INT; // Aktueller Schritt FB500
+  END_STRUCT
+
+BEGIN
+END_DATA_BLOCK
